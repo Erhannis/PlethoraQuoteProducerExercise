@@ -8,6 +8,7 @@ package plethoraquoteproducer;
 import com.google.gson.Gson;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.ArrayList;
@@ -167,9 +168,9 @@ public class PlethoraQuoteProducer {
     // each flat segment of it, rotate the object so that the segment in
     // question lies on the bottom edge, and find the bounding rectangle in that
     // orientation.  We shall pick the orientation with the smallest bounding
-    // rectangle as being optimal.  Then we shall increase its size by the
-    // padding, in all 4 directions.  We shall assume that doing so does not
-    // change which orientation is optimal, or at least, not account for it.
+    // rectangle as being optimal.  Then we shall increase its width and height
+    // each by the padding.  We shall assume that doing so does not change which
+    // orientation is optimal, or at least, not account for it.
     
     // To find the convex hull, we shall use a form of the gift-wrapping
     // algorithm, as described on wikipedia, but shall modify it to accommodate
@@ -178,10 +179,23 @@ public class PlethoraQuoteProducer {
     // was noted for its simplicity.
     double matCost = 0;
     Profile hull = profile.constructConvexHull();
-    //TODO I could/should maybe move this into a function on Profile
+        
+    //TODO I could/should maybe move this into a function on Profile or something
+    double minAreaCost = Double.POSITIVE_INFINITY;
+    double minAreaAngle = Double.POSITIVE_INFINITY;
     for (Line2D.Double line : hull.lines) {
-      
+      double angle = -Math.atan2(line.getY2() - line.getY1(), line.getX2() - line.getX1());
+      Profile rotHull = hull.rotate(angle);
+      // It may be "upside down", but that shouldn't matter.
+      Rectangle2D bounds = rotHull.calcBounds();
+      double area = (bounds.getWidth() + PADDING) * (bounds.getHeight() + PADDING);
+      double areaCost = area * MATERIAL_COST;
+      if (areaCost < minAreaCost) {
+        minAreaCost = areaCost;
+        minAreaAngle = angle; // Just in case later we want to know.
+      }
     }
+    matCost += minAreaCost;
     
     return timeCost + matCost;
   }
