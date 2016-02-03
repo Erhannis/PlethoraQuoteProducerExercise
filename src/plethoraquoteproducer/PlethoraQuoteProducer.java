@@ -46,14 +46,15 @@ public class PlethoraQuoteProducer {
       return;
 //      // Debugging
 //      //args = new String[]{"CutCircularArc.json"};
-//      //args = new String[]{"ExtrudeCircularArc.json"};
-//      args = new String[]{"Rectangle.json"};
+//      args = new String[]{"ExtrudeCircularArc.json"};
+//      //args = new String[]{"Rectangle.json"};
     }
     String filename = args[0];
     
     PlethoraQuoteProducer pqp = new PlethoraQuoteProducer();
     try {
       Profile profile = pqp.parseFile(filename);
+//      profile = profile.rotate(Math.PI);
       double quote = pqp.calcQuote(profile);
       DecimalFormat df = new DecimalFormat("0.00");
 //      // Debugging; test many rotations
