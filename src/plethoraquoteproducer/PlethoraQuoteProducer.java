@@ -97,7 +97,7 @@ public class PlethoraQuoteProducer {
       List edgeVertices = (List)edge.get("Vertices"); //TODO Eh...I feel like the JSON objects should be named jThing, to distinguish between them and the actual objects.  Maybe I'll do that later.
       ArrayList<Point2D.Double> edgeVertexPoints = new ArrayList<Point2D.Double>();
       for (Object ev : edgeVertices) {
-        String vid = String.valueOf(((Double)edgeVertices.get(0)).intValue()); // It gets parsed as a double
+        String vid = String.valueOf(((Double)ev).intValue()); // It gets parsed as a double
         edgeVertexPoints.add(vertexLookup.get(vid));
       }
       if ("LineSegment".equals(type)) {
@@ -148,11 +148,16 @@ public class PlethoraQuoteProducer {
       timeCost += (line.getP1().distance(line.getP2()) / MAX_SPEED) * TIME_COST;
     }
     for (Arc arc : profile.arcs) {
-      //double dist = arc.;
+      double dist = arc.arcLength();
+      // Assumes non-zero radius.
+      double speed = MAX_SPEED * Math.exp(-1 / arc.radius);
+      timeCost += (dist / speed) * TIME_COST;
     }
     
     // Calculate materials cost
+    double matCost = 0;
     
-    return 0;
+    return timeCost + matCost;
   }
+  
 }
