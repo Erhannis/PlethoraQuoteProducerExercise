@@ -220,6 +220,10 @@ public class Profile {
     }
     curArc = firstArc;
     
+    boolean leftFirstEdgeOnce = false;
+    boolean leftFirstEdgeTwice = false;
+    Arc lastArc = null;
+    Arc lastLastArc = null; // Only non-null if equal to lastArc.  These make sure we don't get stuck on a single arc.
     while (true) {
       if (curArc.getValue() == null) {
         // Currently on a single point
@@ -248,7 +252,8 @@ public class Profile {
         ArrayList<Pair<Point2D, Arc>> candidates = getCandidateWrappingTargets(curArc.getValue());
         Pair<Point2D, Arc> bestCandidate = null;
         for (Pair<Point2D, Arc> nextCandidate : candidates) {
-          if (isPointArcEqual(nextCandidate, curArc)) {
+          // Don't land on the same point you're at, and don't land on the same arc you've done for the past two times.
+          if (isPointArcEqual(nextCandidate, curArc) || (nextCandidate.getValue() == curArc.getValue() && lastLastArc == nextCandidate.getValue())) {
             continue;
           }
           // Find starting point corresponding to the target point
@@ -259,10 +264,24 @@ public class Profile {
           }
         }
         hull.lines.add(new Line2D.Double(curArc.getKey(), bestCandidate.getKey()));
+        // Doing this bit to avoid weirdness with starting on arcs; make sure if we've wrapped around and a little past the first edge, we stop
+        // Also threw in a line for if there's just a single arc, which'd be weird.
+        if ((curArc.getValue() == firstArc.getValue() && bestCandidate.getValue() != firstArc.getValue()) || (arcs.size() == 1 && lines.size() == 0)) {
+          if (leftFirstEdgeOnce) {
+            leftFirstEdgeTwice = true;
+          }
+          leftFirstEdgeOnce = true;
+        }
         curArc = bestCandidate;
       }
-      //TODO This will probably have problems if you start on an arc.
-      if (isPointArcEqual(curArc, firstArc)) {
+      if (lastArc == curArc.getValue()) {
+        lastLastArc = lastArc;
+        lastArc = curArc.getValue();
+      } else {
+        lastLastArc = null;
+        lastArc = curArc.getValue();
+      }
+      if (isPointArcEqual(curArc, firstArc) || leftFirstEdgeTwice) {
         break;
       }
     }
@@ -470,12 +489,13 @@ public class Profile {
     }
     for (Arc arc : arcs) {
       Arc newArc = new Arc();
+      newArc.radius = arc.radius;
       newArc.center = Utils.rotatePoint(arc.center, angle);
       newArc.startAngle = Utils.wrapAngle(arc.startAngle + angle);
       newArc.endAngle = Utils.wrapAngle(arc.endAngle + angle);
       newArc.startPoint = Utils.rotatePoint(arc.startPoint, angle);
       newArc.endPoint = Utils.rotatePoint(arc.endPoint, angle);
-      result.arcs.add(arc);
+      result.arcs.add(newArc);
     }
     return result;
   }

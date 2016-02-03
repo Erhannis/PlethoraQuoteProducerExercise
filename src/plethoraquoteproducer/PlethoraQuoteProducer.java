@@ -11,6 +11,7 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,29 +25,29 @@ import java.util.logging.Logger;
  * Parsing JSON in Java - used GSON
  * Algorithms for finding convex hulls - wikipedia.  Modifying the gift-wrapping algorithm.
  * Looked up the rotation matrix formula on wikipedia.
+ * Looked up how to format dollar amounts properly - http://stackoverflow.com/a/13791420/513038
  * @author erhannis
  */
 public class PlethoraQuoteProducer {
 
-  // Stuff to do now, later, or maybe never
-  //TODO Improve comments
-  
   public static final double PADDING = 0.1; // inches
   public static final double MATERIAL_COST = 0.75; // $/(in^2)
   public static final double MAX_SPEED = 0.5; // in/s
   public static final double TIME_COST = 0.07; // $/s
   
-  public static final double SNAP_THRESHOLD = 0.000001; // The distance under which two points are considered equal
+  public static final double SNAP_THRESHOLD = 0.000001; // The distance under which two points are (sometimes) considered equal
   
   /**
    * @param args the command line arguments
    */
   public static void main(String[] args) {
     if (args.length < 1) {
-//      System.out.println("Please include profile .json file as first parameter.");
-//      return;
-      //TODO This is for debugging.  Remove it.
-      args = new String[]{"ExtrudeCircularArc.json"};
+      System.out.println("Please include profile .json file as first parameter.");
+      return;
+//      // Debugging
+//      //args = new String[]{"CutCircularArc.json"};
+//      //args = new String[]{"ExtrudeCircularArc.json"};
+//      args = new String[]{"Rectangle.json"};
     }
     String filename = args[0];
     
@@ -54,8 +55,17 @@ public class PlethoraQuoteProducer {
     try {
       Profile profile = pqp.parseFile(filename);
       double quote = pqp.calcQuote(profile);
-      //TODO Might not quite be formatted right for dollars.
-      System.out.println((Math.round(quote * 100) / 100.0) + " dollars");
+      DecimalFormat df = new DecimalFormat("0.00");
+//      // Debugging; test many rotations
+//      for (double a = -Math.PI - 1; a < Math.PI + 1; a += 0.01) {
+//        Profile p = profile.rotate(a);
+//        quote = pqp.calcQuote(p);
+//        // Formatting from http://stackoverflow.com/a/13791420/513038
+//        if (!"14.10".equals(df.format(quote))) {
+//          System.out.println("err " + df.format(quote) + " != 4.06 on angle " + a);
+//        }
+//      }
+      System.out.println(df.format(quote) + " dollars");
     } catch (FileNotFoundException ex) {
       Logger.getLogger(PlethoraQuoteProducer.class.getName()).log(Level.SEVERE, null, ex);
     }
@@ -82,12 +92,6 @@ public class PlethoraQuoteProducer {
       double y = (Double)position.get("Y");
       vertexLookup.put(id, new Point2D.Double(x, y));
     }
-    
-    //TODO Debugging.  Remove.
-//    for (Entry<String, Point2D.Double> e : vertexLookup.entrySet()) {
-//      System.out.println(e.getKey());
-//      System.out.println(e.getValue().x + ", " + e.getValue().y);
-//    }
     
     Profile profile = new Profile();
     
@@ -135,10 +139,6 @@ public class PlethoraQuoteProducer {
       }
     }
 
-    //TODO Debugging.  Remove.
-//    System.out.println("lines " + profile.lines.size());
-//    System.out.println("arcs " + profile.arcs.size());
-    
     return profile;
   }
   
