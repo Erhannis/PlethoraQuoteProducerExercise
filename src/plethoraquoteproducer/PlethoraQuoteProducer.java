@@ -22,6 +22,7 @@ import java.util.logging.Logger;
  * Things I looked up:
  * Parsing JSON in Java - used GSON
  * Algorithms for finding convex hulls - wikipedia.  Modifying the gift-wrapping algorithm.
+ * Looked up the rotation matrix formula on wikipedia.
  * @author erhannis
  */
 public class PlethoraQuoteProducer {
@@ -122,6 +123,8 @@ public class PlethoraQuoteProducer {
         arc.radius = arc.center.distance(startVertex);
         arc.startAngle = Math.atan2(startVertex.y - arc.center.y, startVertex.x - arc.center.x);
         arc.endAngle = Math.atan2(endVertex.y - arc.center.y, endVertex.x - arc.center.x);
+        arc.startPoint = startVertex;
+        arc.endPoint = endVertex;
         
         profile.arcs.add(arc);
       } else {
@@ -155,7 +158,30 @@ public class PlethoraQuoteProducer {
     }
     
     // Calculate materials cost
+    // I assert the following to be probably true, but have not proven it.  Given more time, I'd likely try to prove it more rigorously.
+    // First, I assert that the optimal orientation of the profile will have a
+    // flat segment of its convex hull snug up against a side of the rectangular
+    // boundary.  Furthermore, it does not matter WHICH side, as it would result
+    // in the same rectangle, in any direction, so we shall assume the lower
+    // side.  Therefore, we shall find the convex hull of the profile, and for
+    // each flat segment of it, rotate the object so that the segment in
+    // question lies on the bottom edge, and find the bounding rectangle in that
+    // orientation.  We shall pick the orientation with the smallest bounding
+    // rectangle as being optimal.  Then we shall increase its size by the
+    // padding, in all 4 directions.  We shall assume that doing so does not
+    // change which orientation is optimal, or at least, not account for it.
+    
+    // To find the convex hull, we shall use a form of the gift-wrapping
+    // algorithm, as described on wikipedia, but shall modify it to accommodate
+    // the arcs.
+    // Given more time, we could use a more efficient algorithm, but this one
+    // was noted for its simplicity.
     double matCost = 0;
+    Profile hull = profile.constructConvexHull();
+    //TODO I could/should maybe move this into a function on Profile
+    for (Line2D.Double line : hull.lines) {
+      
+    }
     
     return timeCost + matCost;
   }

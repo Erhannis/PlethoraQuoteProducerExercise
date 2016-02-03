@@ -16,18 +16,21 @@ public class Arc {
   public double radius; // inches
   public double startAngle; // Radians, -pi to pi, counterclockwise starting from the direction of (-1,0).  Blame Math.atan2().
   public double endAngle;  // Clockwise to here
+  public Point2D.Double startPoint; // for convenience
+  public Point2D.Double endPoint; // for convenience
   
   public double arcLength() {
-    return mod(startAngle - endAngle, 2 * Math.PI) * radius; // 2pi*r*(arcAngle / 2pi) -> r*arcAngle
+    return Utils.mod(startAngle - endAngle, 2 * Math.PI) * radius; // 2pi*r*(arcAngle / 2pi) -> r*arcAngle
   }
   
-  /**
-   * Because java's mod is different from mathematic's mod.
-   * @param x
-   * @param n
-   * @return 
-   */
-  public static double mod(double x, double n) {
-    return ((x % n) + n) % n;
+  public boolean angleInArc(double angle) {
+    double arcSize = Utils.mod(startAngle - endAngle, 2 * Math.PI);
+    double sizeA = Utils.mod(startAngle - angle, 2 * Math.PI);
+    //double sizeB = mod(angle - endAngle, 2 * Math.PI);
+    if (sizeA < arcSize) {
+      return true;
+    } else {
+      return false;
+    }
   }
 }
