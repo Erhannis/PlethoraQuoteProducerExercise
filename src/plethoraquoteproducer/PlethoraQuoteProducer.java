@@ -179,7 +179,7 @@ public class PlethoraQuoteProducer {
     // was noted for its simplicity.
     double matCost = 0;
     Profile hull = profile.constructConvexHull();
-        
+    
     //TODO I could/should maybe move this into a function on Profile or something
     double minAreaCost = Double.POSITIVE_INFINITY;
     double minAreaAngle = Double.POSITIVE_INFINITY;
@@ -199,5 +199,4 @@ public class PlethoraQuoteProducer {
     
     return timeCost + matCost;
   }
-  
 }

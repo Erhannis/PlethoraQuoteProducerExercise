@@ -200,10 +200,129 @@ public class Profile {
     }
   }
   
+  /**
+   * Construct a profile of the convex hull of THIS profile.
+   * Uses a modified version of the gift-wrapping algorithm.
+   * @return 
+   */
   public Profile constructConvexHull() {
     Profile hull = new Profile();
-    //TODO Finish
-    return null;
+    
+    Point2D fpl = this.findLeftmostPointOfLines();
+    Pair<Point2D, Arc> fpa = this.findLeftmostPointOfArcs();
+
+    Pair<Point2D, Arc> firstArc, curArc; // Not necessarily arcs - only arcs if the Arc is not null.
+    if (fpa == null || (fpl != null && fpl.getX() < fpa.getKey().getX())) {
+      firstArc = new Pair<Point2D, Arc>(fpl, null);
+    } else {
+      firstArc = new Pair<Point2D, Arc>(fpa.getKey(), fpa.getValue());
+    }
+    curArc = firstArc;
+    
+    while (true) {
+      if (curArc.getValue() == null) {
+        // Currently on a single point
+         ArrayList<Pair<Point2D, Arc>> candidates = getCandidateWrappingTargets(curArc.getKey());
+         Pair<Point2D, Arc> bestCandidate = null;
+         for (Pair<Point2D, Arc> nextCandidate : candidates) {
+           if (isPointArcEqual(nextCandidate, curArc)) {
+             continue;
+           }
+           if (bestCandidate == null || new Line2D.Double(curArc.getKey(), bestCandidate.getKey()).relativeCCW(nextCandidate.getKey()) == -1) {
+             bestCandidate = nextCandidate;
+           }
+         }
+         hull.lines.add(new Line2D.Double(curArc.getKey(), bestCandidate.getKey()));
+         curArc = bestCandidate;
+      } else {
+        // Currently on an arc
+        //TODO Don't forget to check if on current arc - may still be valid, though
+        //TODO Add arc parts to hull
+        //TODO Do
+      }
+      if (isPointArcEqual(curArc, firstArc)) {
+        break;
+      }
+    }
+    
+    return hull;
+  }
+  
+  /**
+   * Constructs a list of points for the convex hull algorithm, for a given point
+   * to connect to.  The trick is turning the arcs into the appropriate points.
+   * @param pt
+   * @return 
+   */
+  public ArrayList<Pair<Point2D, Arc>> getCandidateWrappingTargets(Point2D pt) {
+    ArrayList<Pair<Point2D, Arc>> result = new ArrayList<Pair<Point2D, Arc>>();
+    for (Line2D.Double line : lines) {
+      Point2D p1 = line.getP1();
+      Point2D p2 = line.getP2();
+      if (p1 != pt) {
+        result.add(new Pair<Point2D, Arc>(p1, null));
+      }
+      if (p2 != pt) {
+        result.add(new Pair<Point2D, Arc>(p2, null));
+      }
+    }
+    for (Arc arc : arcs) {
+      // Find the two points on the edges of the circle tangent to which you can draw lines through pt
+      double angleDiff = Math.acos(arc.radius / arc.center.distance(pt));
+      double anglePtAbs = Math.atan2(arc.center.getY() - pt.getY(), arc.center.getX() - pt.getX());
+      double angle1 = Utils.wrapAngle(anglePtAbs + angleDiff);
+      double angle2 = Utils.wrapAngle(anglePtAbs - angleDiff);
+      if (arc.angleInArc(angle1)) {
+        result.add(new Pair<Point2D, Arc>(arc.getPointAtAngle(angle1), arc));
+      }
+      if (arc.angleInArc(angle2)) {
+        result.add(new Pair<Point2D, Arc>(arc.getPointAtAngle(angle2), arc));
+      }
+      // Also include start/end points, 'cause they're on the arc, too, and may be important
+      result.add(new Pair<Point2D, Arc>(arc.startPoint, arc));
+      result.add(new Pair<Point2D, Arc>(arc.endPoint, arc));
+    }
+    return result;
+  }
+
+  /**
+   * The Pair<Point2D, Arc> is a bit fuzzy, because in some cases (the hull algorithm)
+   * I use it both for single points and for points on arcs - in the former case,
+   * the Arc is null, and in the latter, the "same" points on the arc may not be
+   * strictly equal.
+   * ...Hmm, you could have different points on the same arc....  I'll make this once I need it.
+   * @param a
+   * @param b
+   * @return 
+   */
+  public static boolean isPointArcEqual(Pair<Point2D, Arc> a, Pair<Point2D, Arc> b) {
+    if (a.getValue() == null) {
+      if (b.getValue() != null) {
+        return false;
+      } else {
+        // point and point
+        if (a.getKey() == b.getKey() || ((a.getKey().getX() == b.getKey().getX()) && (a.getKey().getY() == b.getKey().getY()))) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+    } else {
+      if (b.getValue() == null) {
+        return false;
+      } else {
+        // arc and arc
+        if (a.getValue() != b.getValue()) {
+          return false;
+        }
+        //TODO For now, I'm just checking if the coords are equal.  This may not be correct.
+        if (a.getKey() == b.getKey() || ((a.getKey().getX() == b.getKey().getX()) && (a.getKey().getY() == b.getKey().getY()))) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+    }
   }
   
   /**
@@ -222,8 +341,8 @@ public class Profile {
     for (Arc arc : arcs) {
       Arc newArc = new Arc();
       newArc.center = Utils.rotatePoint(arc.center, angle);
-      newArc.startAngle = Utils.mod(arc.startAngle + Math.PI, 2 * Math.PI) - Math.PI; //TODO Technically results in PI -> -PI, but it should still work, I think.  Might consider fixing it.
-      newArc.endAngle = Utils.mod(arc.endAngle + Math.PI, 2 * Math.PI) - Math.PI; //TODO Same
+      newArc.startAngle = Utils.wrapAngle(arc.startAngle + angle);
+      newArc.endAngle = Utils.wrapAngle(arc.endAngle + angle);
       newArc.startPoint = Utils.rotatePoint(arc.startPoint, angle);
       newArc.endPoint = Utils.rotatePoint(arc.endPoint, angle);
       result.arcs.add(arc);

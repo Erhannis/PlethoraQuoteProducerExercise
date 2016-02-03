@@ -31,4 +31,14 @@ public class Utils {
   public static Point2D.Double rotatePoint(Point2D pt, double angle) {
     return new Point2D.Double((Math.cos(angle) * pt.getX()) - (Math.sin(angle) * pt.getY()), (Math.sin(angle) * pt.getX()) + (Math.cos(angle) * pt.getY()));
   }
+  
+  /**
+   * Wraps angle to [-PI, PI).
+   * Would rather it be (-PI, PI], to match Math.atan2(), but it shouldn't matter.
+   * @param angle
+   * @return 
+   */
+  public static double wrapAngle(double angle) {
+    return Utils.mod(angle + Math.PI, 2 * Math.PI) - Math.PI;
+  }
 }

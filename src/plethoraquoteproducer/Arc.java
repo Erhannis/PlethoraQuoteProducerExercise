@@ -14,7 +14,7 @@ import java.awt.geom.Point2D;
 public class Arc {
   public Point2D.Double center;
   public double radius; // inches
-  public double startAngle; // Radians, -pi to pi, counterclockwise starting from the direction of (-1,0).  Blame Math.atan2().
+  public double startAngle; // Radians, -pi to pi, counterclockwise starting from the direction of (-1,0).  Matches Math.atan2().
   public double endAngle;  // Clockwise to here
   public Point2D.Double startPoint; // for convenience
   public Point2D.Double endPoint; // for convenience
@@ -32,5 +32,9 @@ public class Arc {
     } else {
       return false;
     }
+  }
+  
+  public Point2D getPointAtAngle(double angle) {
+    return new Point2D.Double(center.getX() + (radius * Math.cos(angle)), center.getY() + (radius * Math.sin(angle)));
   }
 }
