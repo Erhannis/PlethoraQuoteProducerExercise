@@ -21,6 +21,7 @@ import java.util.logging.Logger;
 /**
  * Things I looked up:
  * Parsing JSON in Java - used GSON
+ * Algorithms for finding convex hulls - wikipedia.  Modifying the gift-wrapping algorithm.
  * @author erhannis
  */
 public class PlethoraQuoteProducer {
@@ -48,6 +49,9 @@ public class PlethoraQuoteProducer {
     PlethoraQuoteProducer pqp = new PlethoraQuoteProducer();
     try {
       Profile profile = pqp.parseFile(filename);
+      double quote = pqp.calcQuote(profile);
+      //TODO Might not quite be formatted right for dollars.
+      System.out.println((Math.round(quote * 100) / 100.0) + " dollars");
     } catch (FileNotFoundException ex) {
       Logger.getLogger(PlethoraQuoteProducer.class.getName()).log(Level.SEVERE, null, ex);
     }
@@ -116,8 +120,8 @@ public class PlethoraQuoteProducer {
         Arc arc = new Arc();
         arc.center = new Point2D.Double(cx, cy);
         arc.radius = arc.center.distance(startVertex);
-        arc.startAngle = Math.atan2(startVertex.x - arc.center.x, startVertex.y - arc.center.y);
-        arc.endAngle = Math.atan2(endVertex.x - arc.center.x, endVertex.y - arc.center.y);
+        arc.startAngle = Math.atan2(startVertex.y - arc.center.y, startVertex.x - arc.center.x);
+        arc.endAngle = Math.atan2(endVertex.y - arc.center.y, endVertex.x - arc.center.x);
         
         profile.arcs.add(arc);
       } else {
@@ -130,5 +134,25 @@ public class PlethoraQuoteProducer {
 //    System.out.println("arcs " + profile.arcs.size());
     
     return profile;
+  }
+  
+  /**
+   * Takes a profile and calculates a quote for its cost.
+   * @param profile
+   * @return Quote in dollars.
+   */
+  public double calcQuote(Profile profile) {
+    // Calculate time cost
+    double timeCost = 0;
+    for (Line2D.Double line : profile.lines) {
+      timeCost += (line.getP1().distance(line.getP2()) / MAX_SPEED) * TIME_COST;
+    }
+    for (Arc arc : profile.arcs) {
+      //double dist = arc.;
+    }
+    
+    // Calculate materials cost
+    
+    return 0;
   }
 }

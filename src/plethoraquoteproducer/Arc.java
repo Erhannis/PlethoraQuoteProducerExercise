@@ -16,4 +16,8 @@ public class Arc {
   public double radius; // inches
   public double startAngle; // Radians
   public double endAngle;  // Clockwise to here
+  
+  public double arcLength() {
+    
+  }
 }
