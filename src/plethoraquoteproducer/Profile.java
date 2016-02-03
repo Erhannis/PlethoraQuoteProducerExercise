@@ -281,6 +281,7 @@ public class Profile {
         lastLastArc = null;
         lastArc = curArc.getValue();
       }
+      //TODO I think there's still a looping bug.  Gonna have to fix it somehow else.
       if (isPointArcEqual(curArc, firstArc) || leftFirstEdgeTwice) {
         break;
       }
@@ -406,7 +407,9 @@ public class Profile {
     ArrayList<Point2D> points = new ArrayList<Point2D>();
     // Find the points on the edges of the source arc tangent to which you can draw lines through the target
     double angleDiff = Math.acos(source.radius / source.center.distance(target.getKey()));
+    //TODO This line may have the terms backwards, and it sets things slightly awry.
     double anglePtAbs = Math.atan2(source.center.getY() - target.getKey().getY(), source.center.getX() - target.getKey().getX());
+    //double anglePtAbs = Math.atan2(target.getKey().getY() - source.center.getY(), target.getKey().getX() - source.center.getX());
     double angle1 = Utils.wrapAngle(anglePtAbs + angleDiff);
     double angle2 = Utils.wrapAngle(anglePtAbs - angleDiff);
     if (source.angleInArc(angle1)) {

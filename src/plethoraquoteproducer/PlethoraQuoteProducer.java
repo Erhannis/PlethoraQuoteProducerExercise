@@ -54,6 +54,7 @@ public class PlethoraQuoteProducer {
     PlethoraQuoteProducer pqp = new PlethoraQuoteProducer();
     try {
       Profile profile = pqp.parseFile(filename);
+//      profile = genTestProfile();
 //      profile = profile.rotate(Math.PI);
       double quote = pqp.calcQuote(profile);
       DecimalFormat df = new DecimalFormat("0.00");
@@ -71,9 +72,56 @@ public class PlethoraQuoteProducer {
       Logger.getLogger(PlethoraQuoteProducer.class.getName()).log(Level.SEVERE, null, ex);
     }
   }
+
+  /**
+   * Generate testing profiles
+   * @return 
+   */
+  public static Profile genTestProfile() {
+    Profile profile = new Profile();
+    profile.lines.add(new Line2D.Double(-1, -2, 1, -2));
+    profile.lines.add(new Line2D.Double(-1, 2, 1, 2));
+    profile.lines.add(new Line2D.Double(-2, -1, -2, 1));
+    profile.lines.add(new Line2D.Double(2, -1, 2, 1));
+    Arc arc = new Arc();
+    arc.radius = 1;
+    arc.center = new Point2D.Double(2, -2);
+    arc.startAngle = Math.PI / 2;
+    arc.startPoint = new Point2D.Double(2, -1);
+    arc.endAngle = Math.PI;
+    arc.endPoint = new Point2D.Double(1, -2);
+    profile.arcs.add(arc);
+    arc = new Arc();
+    arc.radius = 1;
+    arc.center = new Point2D.Double(2, 2);
+    arc.startAngle = Math.PI;
+    arc.startPoint = new Point2D.Double(1, 2);
+    arc.endAngle = -Math.PI / 2;
+    arc.endPoint = new Point2D.Double(2, 1);
+    profile.arcs.add(arc);
+    arc = new Arc();
+    arc.radius = 1;
+    arc.center = new Point2D.Double(-2, 2);
+    arc.startAngle = -Math.PI / 2;
+    arc.startPoint = new Point2D.Double(-2, 1);
+    arc.endAngle = 0;
+    arc.endPoint = new Point2D.Double(-1, 2);
+    profile.arcs.add(arc);
+    arc = new Arc();
+    arc.radius = 1;
+    arc.center = new Point2D.Double(-2, -2);
+    arc.startAngle = 0;
+    arc.startPoint = new Point2D.Double(-1, -2);
+    arc.endAngle = Math.PI / 2;
+    arc.endPoint = new Point2D.Double(-2, -1);
+    profile.arcs.add(arc);
+    
+    return profile;
+  }
   
   /**
    * Parses a JSON profile file.
+   * Could probably make this static.
    * @param filename
    * @return Profile parsed
    */
@@ -145,6 +193,7 @@ public class PlethoraQuoteProducer {
   
   /**
    * Takes a profile and calculates a quote for its cost.
+   * Could probably make this static, too.
    * @param profile
    * @return Quote in dollars.
    */
