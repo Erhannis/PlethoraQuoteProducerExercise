@@ -36,6 +36,8 @@ public class PlethoraQuoteProducer {
   public static final double MAX_SPEED = 0.5; // in/s
   public static final double TIME_COST = 0.07; // $/s
   
+  public static final double SNAP_THRESHOLD = 0.000001; // The distance under which two points are considered equal
+  
   /**
    * @param args the command line arguments
    */
@@ -44,7 +46,7 @@ public class PlethoraQuoteProducer {
 //      System.out.println("Please include profile .json file as first parameter.");
 //      return;
       //TODO This is for debugging.  Remove it.
-      args = new String[]{"Rectangle.json"};
+      args = new String[]{"ExtrudeCircularArc.json"};
     }
     String filename = args[0];
     
@@ -185,9 +187,9 @@ public class PlethoraQuoteProducer {
     double minAreaAngle = Double.POSITIVE_INFINITY;
     for (Line2D.Double line : hull.lines) {
       double angle = -Math.atan2(line.getY2() - line.getY1(), line.getX2() - line.getX1());
-      Profile rotHull = hull.rotate(angle);
+      Profile rotProfile = profile.rotate(angle);
       // It may be "upside down", but that shouldn't matter.
-      Rectangle2D bounds = rotHull.calcBounds();
+      Rectangle2D bounds = rotProfile.calcBounds();
       double area = (bounds.getWidth() + PADDING) * (bounds.getHeight() + PADDING);
       double areaCost = area * MATERIAL_COST;
       if (areaCost < minAreaCost) {

@@ -203,6 +203,7 @@ public class Profile {
   /**
    * Construct a profile of the convex hull of THIS profile.
    * Uses a modified version of the gift-wrapping algorithm.
+   * //TODO This code makes me suspicious.  I'd like to write a bunch of verification code.
    * @return 
    */
   public Profile constructConvexHull() {
@@ -222,24 +223,45 @@ public class Profile {
     while (true) {
       if (curArc.getValue() == null) {
         // Currently on a single point
-         ArrayList<Pair<Point2D, Arc>> candidates = getCandidateWrappingTargets(curArc.getKey());
-         Pair<Point2D, Arc> bestCandidate = null;
-         for (Pair<Point2D, Arc> nextCandidate : candidates) {
-           if (isPointArcEqual(nextCandidate, curArc)) {
-             continue;
-           }
-           if (bestCandidate == null || new Line2D.Double(curArc.getKey(), bestCandidate.getKey()).relativeCCW(nextCandidate.getKey()) == -1) {
-             bestCandidate = nextCandidate;
-           }
-         }
-         hull.lines.add(new Line2D.Double(curArc.getKey(), bestCandidate.getKey()));
-         curArc = bestCandidate;
+        ArrayList<Pair<Point2D, Arc>> candidates = getCandidateWrappingTargets(curArc.getKey());
+        Pair<Point2D, Arc> bestCandidate = null;
+        for (Pair<Point2D, Arc> nextCandidate : candidates) {
+          if (isPointArcEqual(nextCandidate, curArc) || nextCandidate.getKey().distance(curArc.getKey()) < PlethoraQuoteProducer.SNAP_THRESHOLD) {
+            continue;
+          }
+          if (bestCandidate == null || new Line2D.Double(curArc.getKey(), bestCandidate.getKey()).relativeCCW(nextCandidate.getKey()) == -1) {
+            bestCandidate = nextCandidate;
+          }
+        }
+        hull.lines.add(new Line2D.Double(curArc.getKey(), bestCandidate.getKey()));
+        curArc = bestCandidate;
       } else {
         // Currently on an arc
-        //TODO Don't forget to check if on current arc - may still be valid, though
         //TODO Add arc parts to hull
-        //TODO Do
+
+//        if (curArc.getKey().distance(curArc.getValue().endPoint) < PlethoraQuoteProducer.SNAP_THRESHOLD) {
+//          // We're starting on the end point, which means there's a hole to our right as we go forward
+//        } else {
+//          
+//        }
+        
+        ArrayList<Pair<Point2D, Arc>> candidates = getCandidateWrappingTargets(curArc.getValue());
+        Pair<Point2D, Arc> bestCandidate = null;
+        for (Pair<Point2D, Arc> nextCandidate : candidates) {
+          if (isPointArcEqual(nextCandidate, curArc)) {
+            continue;
+          }
+          // Find starting point corresponding to the target point
+          Pair<Point2D, Arc> tempArc = new Pair<Point2D, Arc>(getCandidateWrappingSource(curArc.getValue(), nextCandidate), curArc.getValue());
+          if (bestCandidate == null || new Line2D.Double(tempArc.getKey(), bestCandidate.getKey()).relativeCCW(nextCandidate.getKey()) == -1) {
+            bestCandidate = nextCandidate;
+            curArc = tempArc;
+          }
+        }
+        hull.lines.add(new Line2D.Double(curArc.getKey(), bestCandidate.getKey()));
+        curArc = bestCandidate;
       }
+      //TODO This will probably have problems if you start on an arc.
       if (isPointArcEqual(curArc, firstArc)) {
         break;
       }
@@ -256,16 +278,6 @@ public class Profile {
    */
   public ArrayList<Pair<Point2D, Arc>> getCandidateWrappingTargets(Point2D pt) {
     ArrayList<Pair<Point2D, Arc>> result = new ArrayList<Pair<Point2D, Arc>>();
-    for (Line2D.Double line : lines) {
-      Point2D p1 = line.getP1();
-      Point2D p2 = line.getP2();
-      if (p1 != pt) {
-        result.add(new Pair<Point2D, Arc>(p1, null));
-      }
-      if (p2 != pt) {
-        result.add(new Pair<Point2D, Arc>(p2, null));
-      }
-    }
     for (Arc arc : arcs) {
       // Find the two points on the edges of the circle tangent to which you can draw lines through pt
       double angleDiff = Math.acos(arc.radius / arc.center.distance(pt));
@@ -282,9 +294,127 @@ public class Profile {
       result.add(new Pair<Point2D, Arc>(arc.startPoint, arc));
       result.add(new Pair<Point2D, Arc>(arc.endPoint, arc));
     }
+    for (Line2D.Double line : lines) {
+      Point2D p1 = line.getP1();
+      Point2D p2 = line.getP2();
+      if (p1 != pt) {
+        result.add(new Pair<Point2D, Arc>(p1, null));
+      }
+      if (p2 != pt) {
+        result.add(new Pair<Point2D, Arc>(p2, null));
+      }
+    }
     return result;
   }
 
+  /**
+   * Constructs a list of points for the convex hull algorithm, for a given arc
+   * to connect to.
+   * @param arc
+   * @return 
+   */
+  public ArrayList<Pair<Point2D, Arc>> getCandidateWrappingTargets(Arc arc) {
+    ArrayList<Pair<Point2D, Arc>> result = new ArrayList<Pair<Point2D, Arc>>();
+    for (Arc arc2 : arcs) {
+      if (arc == arc2) {
+        result.add(new Pair<Point2D, Arc>(arc.startPoint, arc));
+        result.add(new Pair<Point2D, Arc>(arc.endPoint, arc));
+      } else {
+        // Find the points on the edges of arc2 tangent to which you can draw lines through points on arc
+
+        {
+          // Starting from startPoint
+          double angleDiff = Math.acos(arc2.radius / arc2.center.distance(arc.startPoint));
+          double anglePtAbs = Math.atan2(arc2.center.getY() - arc.startPoint.getY(), arc2.center.getX() - arc.startPoint.getX());
+          double angle1 = Utils.wrapAngle(anglePtAbs + angleDiff);
+          double angle2 = Utils.wrapAngle(anglePtAbs - angleDiff);
+          if (arc2.angleInArc(angle1)) {
+            result.add(new Pair<Point2D, Arc>(arc2.getPointAtAngle(angle1), arc2));
+          }
+          if (arc2.angleInArc(angle2)) {
+            result.add(new Pair<Point2D, Arc>(arc2.getPointAtAngle(angle2), arc2));
+          }
+        }
+        
+        {
+          // Starting from endPoint
+          double angleDiff = Math.acos(arc2.radius / arc2.center.distance(arc.endPoint));
+          double anglePtAbs = Math.atan2(arc2.center.getY() - arc.endPoint.getY(), arc2.center.getX() - arc.endPoint.getX());
+          double angle1 = Utils.wrapAngle(anglePtAbs + angleDiff);
+          double angle2 = Utils.wrapAngle(anglePtAbs - angleDiff);
+          if (arc2.angleInArc(angle1)) {
+            result.add(new Pair<Point2D, Arc>(arc2.getPointAtAngle(angle1), arc2));
+          }
+          if (arc2.angleInArc(angle2)) {
+            result.add(new Pair<Point2D, Arc>(arc2.getPointAtAngle(angle2), arc2));
+          }
+        }
+
+        double angleDiff;
+        //TODO I'm not completely sure these angles can't get out of the appropriate range.
+        if (arc2.radius > arc.radius) {
+          angleDiff = Math.acos(Math.abs(arc.radius - arc2.radius) / arc.center.distance(arc2.center));
+        } else if (arc2.radius < arc.radius) {
+          angleDiff = (Math.PI / 2.0) + Math.asin(Math.abs(arc.radius - arc2.radius) / arc.center.distance(arc2.center));
+        } else {
+          angleDiff = Math.PI / 2.0;
+        }
+        double anglePtAbs = Math.atan2(arc2.center.getY() - arc.center.getY(), arc2.center.getX() - arc.center.getX());
+        double angle1 = Utils.wrapAngle(anglePtAbs + angleDiff);
+        double angle2 = Utils.wrapAngle(anglePtAbs - angleDiff);
+        // I could probably check whether the corresponding point on arc is in angle, too, and it'd be more efficient, but this is still accurate.
+        if (arc2.angleInArc(angle1)) {
+          result.add(new Pair<Point2D, Arc>(arc2.getPointAtAngle(angle1), arc2));
+        }
+        if (arc2.angleInArc(angle2)) {
+          result.add(new Pair<Point2D, Arc>(arc2.getPointAtAngle(angle2), arc2));
+        }
+        // Also include start/end points, 'cause they're on the arc, too, and may be important
+        result.add(new Pair<Point2D, Arc>(arc2.startPoint, arc2));
+        result.add(new Pair<Point2D, Arc>(arc2.endPoint, arc2));
+      }
+    }
+    for (Line2D.Double line : lines) {
+      Point2D p1 = line.getP1();
+      Point2D p2 = line.getP2();
+      result.add(new Pair<Point2D, Arc>(p1, null));
+      result.add(new Pair<Point2D, Arc>(p2, null));
+    }
+    return result;
+  }
+  
+  public Point2D getCandidateWrappingSource(Arc source, Pair<Point2D, Arc> target) {
+    ArrayList<Point2D> points = new ArrayList<Point2D>();
+    // Find the points on the edges of the source arc tangent to which you can draw lines through the target
+    double angleDiff = Math.acos(source.radius / source.center.distance(target.getKey()));
+    double anglePtAbs = Math.atan2(source.center.getY() - target.getKey().getY(), source.center.getX() - target.getKey().getX());
+    double angle1 = Utils.wrapAngle(anglePtAbs + angleDiff);
+    double angle2 = Utils.wrapAngle(anglePtAbs - angleDiff);
+    if (source.angleInArc(angle1)) {
+      points.add(source.getPointAtAngle(angle1));
+    }
+    if (source.angleInArc(angle2)) {
+      points.add(source.getPointAtAngle(angle2));
+    }
+    // Also include start/end points, 'cause they're on the arc, too, and may be important
+    points.add(source.startPoint);
+    points.add(source.endPoint);
+    
+    Point2D bestPoint = null;
+    double bestAngle = Double.POSITIVE_INFINITY;
+    // Looking at the line from target to source center, find which source point is most clockwise.
+    for (Point2D pt : points) {
+      double angleAbs = Math.atan2(pt.getY() - target.getKey().getY(), pt.getX() - target.getKey().getX());
+      double angleRel = Utils.wrapAngle(angleAbs - anglePtAbs);
+      //TODO I don't know what it'd mean if angleRel were less than -PI/2.  Makes me suspicious.
+      if (bestPoint == null || angleRel < bestAngle) {
+        bestPoint = pt;
+        bestAngle = angleRel;
+      }
+    }
+    return bestPoint;
+  }
+  
   /**
    * The Pair<Point2D, Arc> is a bit fuzzy, because in some cases (the hull algorithm)
    * I use it both for single points and for points on arcs - in the former case,
