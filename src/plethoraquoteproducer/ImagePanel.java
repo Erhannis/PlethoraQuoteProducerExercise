@@ -4,25 +4,42 @@
  */
 package plethoraquoteproducer;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Arc2D;
 import java.awt.geom.Line2D;
+import java.awt.geom.NoninvertibleTransformException;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.util.Pair;
 
 /**
- * 
+ * Copied some of the view transformation stuff from one of my other projects
  * @author mewer
  */
 public class ImagePanel extends javax.swing.JPanel {
 
+    private static final Color COLOR_BACKGROUND = Color.WHITE;
+    private static final double VIEW_PRESCALE = 100;
+    private static final double SCROLL_SCALE = 1.1;
+    public AffineTransform at = new AffineTransform(VIEW_PRESCALE, 0, 0, VIEW_PRESCALE, 0, 0);
+    public AffineTransform ati;
+  
     /**
      * Creates new form ImagePanel
      */
     public ImagePanel() {
+      try {
+        ati = at.createInverse();
+      } catch (NoninvertibleTransformException ex) {
+        Logger.getLogger(ImagePanel.class.getName()).log(Level.SEVERE, null, ex);
+      }
       initComponents();
+      this.setBackground(COLOR_BACKGROUND);
     }
 
     private ArrayList<Pair<Profile, Color>> profiles = new ArrayList<Pair<Profile, Color>>();
@@ -37,6 +54,11 @@ public class ImagePanel extends javax.swing.JPanel {
     protected void paintComponent(Graphics g) {
       super.paintComponent(g); //To change body of generated methods, choose Tools | Templates.
       Graphics2D g2 = (Graphics2D)g;
+
+      AffineTransform saveAT = g2.getTransform();
+      g2.transform(at);
+      g2.setStroke(new BasicStroke(0));
+
       for (Pair<Profile, Color> pair : profiles) {
         Profile profile = pair.getKey();
         Color color = pair.getValue();
@@ -46,10 +68,12 @@ public class ImagePanel extends javax.swing.JPanel {
         }
         for (Arc arc : profile.arcs) {
           //TODO Kinda inefficient
-          Arc2D arc2d = new Arc2D.Double(arc.center.getX() - arc.radius, arc.center.getY() + arc.radius, 2 * arc.radius, 2 * arc.radius, arc.startAngle, Utils.mod(arc.endAngle - arc.startAngle, 2 * Math.PI), Arc2D.OPEN);
+          Arc2D arc2d = new Arc2D.Double(arc.center.getX() - arc.radius, arc.center.getY() - arc.radius, 2 * arc.radius, 2 * arc.radius, arc.startAngle * (360 / (2*Math.PI)), Utils.mod(arc.endAngle - arc.startAngle, 2 * Math.PI) * (360 / (2*Math.PI)), Arc2D.OPEN);
           g2.draw(arc2d);
         }
       }
+      
+      g2.setTransform(saveAT);
     }
     
     /**
@@ -60,6 +84,12 @@ public class ImagePanel extends javax.swing.JPanel {
     @SuppressWarnings("unchecked")
   // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
   private void initComponents() {
+
+    addMouseWheelListener(new java.awt.event.MouseWheelListener() {
+      public void mouseWheelMoved(java.awt.event.MouseWheelEvent evt) {
+        formMouseWheelMoved(evt);
+      }
+    });
 
     org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);
     this.setLayout(layout);
@@ -72,6 +102,20 @@ public class ImagePanel extends javax.swing.JPanel {
       .add(0, 300, Short.MAX_VALUE)
     );
   }// </editor-fold>//GEN-END:initComponents
+
+  private void formMouseWheelMoved(java.awt.event.MouseWheelEvent evt) {//GEN-FIRST:event_formMouseWheelMoved
+    double scale = Math.pow(SCROLL_SCALE, -evt.getPreciseWheelRotation());
+    at.preConcatenate(AffineTransform.getTranslateInstance(-evt.getX(), -evt.getY()));
+    at.preConcatenate(AffineTransform.getScaleInstance(scale, scale));
+    at.preConcatenate(AffineTransform.getTranslateInstance(evt.getX(), evt.getY()));
+    try {
+      ati = at.createInverse();
+    } catch (NoninvertibleTransformException ex) {
+      Logger.getLogger(ImagePanel.class.getName()).log(Level.SEVERE, null, ex);
+    }
+    repaint();
+  }//GEN-LAST:event_formMouseWheelMoved
+
   // Variables declaration - do not modify//GEN-BEGIN:variables
   // End of variables declaration//GEN-END:variables
 }

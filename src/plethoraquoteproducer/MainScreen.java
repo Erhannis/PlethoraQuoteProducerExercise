@@ -6,6 +6,8 @@
 package plethoraquoteproducer;
 
 import java.awt.Color;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 import java.io.FileNotFoundException;
 import java.text.DecimalFormat;
 import java.util.logging.Level;
