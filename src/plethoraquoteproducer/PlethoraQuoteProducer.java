@@ -41,13 +41,23 @@ public class PlethoraQuoteProducer {
    * @param args the command line arguments
    */
   public static void main(String[] args) {
+    // Debugging
+    args = new String[]{"CutCircularArc.json", "ui"};
+    
     if (args.length < 1) {
-      System.out.println("Please include profile .json file as first parameter.");
+      System.out.println("Usage: java -jar PlethoraQuoteProducer.java FILENAME.JSON [ui]");
+      System.out.println("Including `ui` as the second parameter will open the gui.");
       return;
 //      // Debugging
 //      //args = new String[]{"CutCircularArc.json"};
 //      args = new String[]{"ExtrudeCircularArc.json"};
 //      //args = new String[]{"Rectangle.json"};
+    } else if (args.length >= 2) {
+      if ("ui".equals(args[1])) {
+        MainScreen ms = new MainScreen(args[0]);
+        ms.setVisible(true);
+        return;
+      }
     }
     String filename = args[0];
     
