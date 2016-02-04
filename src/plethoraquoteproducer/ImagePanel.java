@@ -28,7 +28,9 @@ public class ImagePanel extends javax.swing.JPanel {
     private static final double SCROLL_SCALE = 1.1;
     public AffineTransform at = new AffineTransform(VIEW_PRESCALE, 0, 0, VIEW_PRESCALE, 0, 0);
     public AffineTransform ati;
-  
+
+    private ArrayList<Pair<Profile, Color>> profiles = new ArrayList<Pair<Profile, Color>>();
+    
     /**
      * Creates new form ImagePanel
      */
@@ -41,11 +43,22 @@ public class ImagePanel extends javax.swing.JPanel {
       initComponents();
       this.setBackground(COLOR_BACKGROUND);
     }
-
-    private ArrayList<Pair<Profile, Color>> profiles = new ArrayList<Pair<Profile, Color>>();
     
     public void addProfile(Profile profile, Color color) {
       profiles.add(new Pair<Profile, Color>(profile, color));
+      this.invalidate();
+      this.repaint();
+    }
+    
+    public void setProfiles(ArrayList<Pair<Profile, Color>> profiles) {
+      profiles.clear();
+      profiles.addAll(profiles);
+      this.invalidate();
+      this.repaint();
+    }
+    
+    public void clearProfiles() {
+      profiles.clear();
       this.invalidate();
       this.repaint();
     }

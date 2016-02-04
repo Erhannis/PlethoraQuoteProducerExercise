@@ -6,12 +6,11 @@
 package plethoraquoteproducer;
 
 import java.awt.Color;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
 import java.io.FileNotFoundException;
-import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.util.Pair;
 
 /**
  *
@@ -20,6 +19,8 @@ import java.util.logging.Logger;
 public class MainScreen extends javax.swing.JFrame {
 
   private ImagePanel ip;
+  private ArrayList<ArrayList<Pair<Profile, Color>>> states = new ArrayList<ArrayList<Pair<Profile, Color>>>();
+  private int selectedState = -1;
   
   /**
    * Creates new form MainScreen
@@ -48,6 +49,18 @@ public class MainScreen extends javax.swing.JFrame {
     }
   }
 
+  private void addState(ArrayList<Pair<Profile, Color>> state) {
+    states.add(state);
+    if (selectedState < 0) {
+      setProfileState(0);
+    }
+  }
+  
+  private void setProfileState(int index) {
+    selectedState = index;
+    ip.setProfiles(states.get(index));
+  }
+  
   /**
    * This method is called from within the constructor to initialize the form.
    * WARNING: Do NOT modify this code. The content of this method is always
@@ -86,8 +99,18 @@ public class MainScreen extends javax.swing.JFrame {
     jSplitPane1.setLeftComponent(jPanel1);
 
     btnPrev.setText("<");
+    btnPrev.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        btnPrevActionPerformed(evt);
+      }
+    });
 
     btnNext.setText(">");
+    btnNext.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        btnNextActionPerformed(evt);
+      }
+    });
 
     javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
     jPanel2.setLayout(jPanel2Layout);
@@ -146,6 +169,18 @@ public class MainScreen extends javax.swing.JFrame {
   private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
     // TODO add your handling code here:
   }//GEN-LAST:event_jMenuItem1ActionPerformed
+
+  private void btnPrevActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPrevActionPerformed
+    if (selectedState > 0) {
+      setProfileState(selectedState - 1);
+    }
+  }//GEN-LAST:event_btnPrevActionPerformed
+
+  private void btnNextActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNextActionPerformed
+    if (selectedState < states.size() - 1) {
+      setProfileState(selectedState + 1);
+    }
+  }//GEN-LAST:event_btnNextActionPerformed
 
   /**
    * @param args the command line arguments
