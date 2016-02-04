@@ -206,9 +206,11 @@ public class Profile {
    * Uses a modified version of the gift-wrapping algorithm.
    * //TODO This code makes me suspicious.  I'd like to write a bunch of verification code.
    * I've included MainScreen so I can call debugging functions on it.
+   * @param ms
+   * @param bgProfile Profile to show in the background of the states
    * @return 
    */
-  public Profile constructConvexHull(MainScreen ms) {
+  public Profile constructConvexHull(MainScreen ms, Profile bgProfile) {
     Profile hull = new Profile();
     
     Point2D fpl = this.findLeftmostPointOfLines();
@@ -234,11 +236,11 @@ public class Profile {
       if (count++ > 30 && PlethoraQuoteProducer.DEBUGGING) {
         break;
       }
-if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), null, null, null, null); //DEBUGGING
+if (ms != null) ms.constructAndAddHullState(this, bgProfile, hull, curArc.getKey(), null, null, null, null);
       if (curArc.getValue() == null) {
         // Currently on a single point
         ArrayList<Pair<Point2D, Arc>> candidates = getCandidateWrappingTargets(curArc.getKey(), spentTargets);
-if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), candidates, null, null, null); //DEBUGGING
+if (ms != null) ms.constructAndAddHullState(this, bgProfile, hull, curArc.getKey(), candidates, null, null, null);
         Pair<Point2D, Arc> bestCandidate = null;
         for (Pair<Point2D, Arc> nextCandidate : candidates) {
           if (isPointArcEqual(nextCandidate, curArc) || nextCandidate.getKey().distance(curArc.getKey()) < PlethoraQuoteProducer.SNAP_THRESHOLD) {
@@ -246,14 +248,18 @@ if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), candida
           }
           if (bestCandidate == null || new Line2D.Double(curArc.getKey(), bestCandidate.getKey()).relativeCCW(nextCandidate.getKey()) == -1) {
             bestCandidate = nextCandidate;
-if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), candidates, null, null, new Line2D.Double(curArc.getKey(), bestCandidate.getKey())); //DEBUGGING
+if (ms != null) ms.constructAndAddHullState(this, bgProfile, hull, curArc.getKey(), candidates, null, null, new Line2D.Double(curArc.getKey(), bestCandidate.getKey()));
           }
+        }
+        if (bestCandidate == null) {
+          // Couldn't find a spot to go to - may be done.  Otherwise, just broken.
+          break;
         }
         hull.lines.add(new Line2D.Double(curArc.getKey(), bestCandidate.getKey()));
         curArc = bestCandidate;
         spentTargets.add(curArc.getKey());
       } else {
-        // Currently on an arc
+        // Currently on an arc - no longer used (preempted by getAllLines), because it had weird edge cases
         //TODO Add arc parts to hull
 
 //        if (curArc.getKey().distance(curArc.getValue().endPoint) < PlethoraQuoteProducer.SNAP_THRESHOLD) {
@@ -263,7 +269,7 @@ if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), candida
 //        }
         
         ArrayList<Pair<Point2D, Arc>> candidates = getCandidateWrappingTargets(curArc.getValue(), spentTargets);
-if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), candidates, null, null, null); //DEBUGGING
+if (ms != null) ms.constructAndAddHullState(this, bgProfile, hull, curArc.getKey(), candidates, null, null, null);
         Pair<Point2D, Arc> startArc = curArc;
         Pair<Point2D, Arc> bestCandidate = null;
         for (Pair<Point2D, Arc> nextCandidate : candidates) {
@@ -274,7 +280,7 @@ if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), candida
           // Find starting point corresponding to the target point
           Pair<Point2D, Arc> tempArc = new Pair<Point2D, Arc>(getCandidateWrappingSource(curArc.getValue(), nextCandidate), curArc.getValue());
           
-if (ms != null) {ArrayList<Pair<Point2D, Arc>> nc = new ArrayList<Pair<Point2D, Arc>>(); nc.add(nextCandidate); ms.constructAndAddHullState(this, hull, curArc.getKey(), nc, getCandidateWrappingSources(curArc.getValue(), nextCandidate), tempArc.getKey(), null);} //DEBUGGING
+if (ms != null) {ArrayList<Pair<Point2D, Arc>> nc = new ArrayList<Pair<Point2D, Arc>>(); nc.add(nextCandidate); ms.constructAndAddHullState(this, bgProfile, hull, curArc.getKey(), nc, getCandidateWrappingSources(curArc.getValue(), nextCandidate), tempArc.getKey(), null);}
 
           // Not allowed to cut across an arc from start to finish
           if ((tempArc.getValue().startPoint.distance(tempArc.getKey()) < PlethoraQuoteProducer.SNAP_THRESHOLD
@@ -286,18 +292,21 @@ if (ms != null) {ArrayList<Pair<Point2D, Arc>> nc = new ArrayList<Pair<Point2D, 
           if (bestCandidate == null || new Line2D.Double(curArc.getKey(), bestCandidate.getKey()).relativeCCW(nextCandidate.getKey()) == -1) {
             bestCandidate = nextCandidate;
             curArc = tempArc;
-if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), candidates, null, null, new Line2D.Double(curArc.getKey(), bestCandidate.getKey())); //DEBUGGING
+if (ms != null) ms.constructAndAddHullState(this, bgProfile, hull, curArc.getKey(), candidates, null, null, new Line2D.Double(curArc.getKey(), bestCandidate.getKey()));
           }
         }
         if (startArc.getKey().distance(startArc.getValue().endPoint) < PlethoraQuoteProducer.SNAP_THRESHOLD
          && curArc.getKey().distance(curArc.getValue().startPoint) < PlethoraQuoteProducer.SNAP_THRESHOLD) {
           // We've cut across a hole and are leaving from the other side; put down a line before we go
+          //TODO This is related to a bug in self-intersecting profiles.  Two bugs, actually.
           hull.lines.add(new Line2D.Double(startArc.getKey(), curArc.getKey()));
         }
         if (bestCandidate == null) {
           // Couldn't find a spot to go to - may be done.  Otherwise, just broken.
           break;
         }
+        // Doing this bit to avoid weirdness with starting on arcs; make sure if we've wrapped around and a little past the first edge, we stop
+        // Also threw in a line for if there's just a single arc, which'd be weird.
         if ((curArc.getValue() == firstArc.getValue() && bestCandidate.getValue() != firstArc.getValue()) || (arcs.size() == 1 && lines.size() == 0)) {
           if (leftFirstEdgeOnce) {
             leftFirstEdgeTwice = true;
@@ -306,8 +315,6 @@ if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), candida
           leftFirstEdgeOnce = true;
         }
         hull.lines.add(new Line2D.Double(curArc.getKey(), bestCandidate.getKey()));
-        // Doing this bit to avoid weirdness with starting on arcs; make sure if we've wrapped around and a little past the first edge, we stop
-        // Also threw in a line for if there's just a single arc, which'd be weird.
         curArc = bestCandidate;
         spentTargets.add(curArc.getKey());
       }
@@ -318,13 +325,12 @@ if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), candida
         lastLastArc = null;
         lastArc = curArc.getValue();
       }
-      //TODO I think there's still a looping bug.  Gonna have to fix it somehow else.
       if (isPointArcEqual(curArc, firstArc) || leftFirstEdgeTwice) {
         break;
       }
     }
 
-if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), null, null, null, null); //DEBUGGING
+if (ms != null) ms.constructAndAddHullState(this, bgProfile, hull, curArc.getKey(), null, null, null, null);
     
     return hull;
   }
@@ -565,6 +571,41 @@ if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), null, n
         }
       }
     }
+  }
+  
+  /**
+   * The hull algorithm is having trouble wrapping around curves properly, so
+   * if we give it a mess of lines (or rather, all possible contact points as
+   * lines), it should be able to find the hull properly
+   * @return 
+   */
+  public Profile getAllLines() {
+    HashSet<Point2D> vertices = new HashSet<Point2D>();
+    for (Line2D line : this.lines) {
+      vertices.add(line.getP1());
+      vertices.add(line.getP2());
+    }
+    for (Arc arc : this.arcs) {
+      vertices.add(arc.startPoint);
+      vertices.add(arc.endPoint);
+    }
+    
+    HashSet<Point2D> dummySpentPoints = new HashSet<Point2D>();
+    for (Arc arc : this.arcs) {
+       ArrayList<Pair<Point2D, Arc>> targets = getCandidateWrappingTargets(arc, dummySpentPoints);
+       for (Pair<Point2D, Arc> pair : targets) {
+         vertices.add(pair.getKey());
+         ArrayList<Point2D> sources = getCandidateWrappingSources(arc, pair);
+         vertices.addAll(sources);
+       }
+    }
+    
+    Profile allLines = new Profile();
+    for (Point2D v : vertices) {
+      allLines.lines.add(new Line2D.Double(v, v));
+    }
+    
+    return allLines;
   }
   
   /**

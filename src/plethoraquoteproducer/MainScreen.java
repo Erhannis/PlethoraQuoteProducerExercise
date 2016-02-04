@@ -118,7 +118,8 @@ public class MainScreen extends javax.swing.JFrame {
   }
 
   private void doCalculations(Profile profile) {
-    Profile hull = profile.constructConvexHull(this);
+    Profile allLines = profile.getAllLines();
+    Profile hull = allLines.constructConvexHull(this, profile);
 
     Profile bounds = PlethoraQuoteProducer.getMinBoundingBox(profile, hull);
     if (states.size() > 0) {
@@ -165,10 +166,15 @@ public class MainScreen extends javax.swing.JFrame {
    * @param profile
    * @param hull 
    */
-  public void constructAndAddHullState(Profile profile, Profile hull, Point2D curPoint, ArrayList<Pair<Point2D, Arc>> candidates, ArrayList<Point2D> sourceCandidates, Point2D selectedSource, Line2D bestLine) {
+  public void constructAndAddHullState(Profile profile, Profile bgProfile, Profile hull, Point2D curPoint, ArrayList<Pair<Point2D, Arc>> candidates, ArrayList<Point2D> sourceCandidates, Point2D selectedSource, Line2D bestLine) {
     double ptSize = 0.1;
     ArrayList<Pair<Profile, Color>> state = new ArrayList<Pair<Profile, Color>>();
-    state.add(new Pair(profile, Color.BLACK));
+    if (bgProfile != null) {
+      state.add(new Pair(bgProfile, Color.BLACK));
+      state.add(new Pair(profile, Color.DARK_GRAY));
+    } else {
+      state.add(new Pair(profile, Color.BLACK));
+    }
     state.add(new Pair(hull.rotate(0), Color.CYAN));
     state.add(new Pair(Profile.getProfileWPoints(new ArrayList<Point2D>(Arrays.asList(new Point2D[]{curPoint})), ptSize), Color.ORANGE));
     if (candidates != null) {
