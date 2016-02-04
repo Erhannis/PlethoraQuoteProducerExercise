@@ -109,19 +109,17 @@ public class MainScreen extends javax.swing.JFrame {
     try {
       Profile profile = PlethoraQuoteProducer.parseFile(filename);
 
-      //DEBUGGING remove
-//      profile = PlethoraQuoteProducer.genTestProfile();
-//      profile = profile.rotate(Math.PI);
-
       Profile hull = profile.constructConvexHull(this);
-      
-//      ip.addProfile(profile, Color.BLACK);
-//      ip.addProfile(hull, Color.CYAN);
+
+      Profile bounds = PlethoraQuoteProducer.getMinBoundingBox(profile, hull);
+      if (states.size() > 0) {
+        states.get(states.size() - 1).add(new Pair(bounds, Color.GRAY));
+        setProfileState(selectedState);
+      }
       
       double quote = PlethoraQuoteProducer.calcQuote(profile);
       DecimalFormat df = new DecimalFormat("0.00");
       labelQuote.setText(df.format(quote) + " dollars");
-//      System.out.println(df.format(quote) + " dollars");
     } catch (FileNotFoundException ex) {
       Logger.getLogger(PlethoraQuoteProducer.class.getName()).log(Level.SEVERE, null, ex);
     }
@@ -425,14 +423,14 @@ public class MainScreen extends javax.swing.JFrame {
       try {
         Profile profile = PlethoraQuoteProducer.parseFile(filename);
 
-//        profile = PlethoraQuoteProducer.genTestProfile();
-//        profile = profile.rotate(Math.PI);
-
         Profile hull = profile.constructConvexHull(this);
 
-//        ip.addProfile(profile, Color.BLACK);
-//        ip.addProfile(hull, Color.CYAN);
-
+        Profile bounds = PlethoraQuoteProducer.getMinBoundingBox(profile, hull);
+        if (states.size() > 0) {
+          states.get(states.size() - 1).add(new Pair(bounds, Color.GRAY));
+          setProfileState(selectedState);
+        }
+        
         double quote = PlethoraQuoteProducer.calcQuote(profile);
         DecimalFormat df = new DecimalFormat("0.00");
         labelQuote.setText(df.format(quote) + " dollars");
@@ -516,6 +514,12 @@ public class MainScreen extends javax.swing.JFrame {
       Profile profile = builder.getProfile();
       if (profile.lines.size() > 0 || profile.arcs.size() > 0) {
         Profile hull = profile.constructConvexHull(this);
+        
+        Profile bounds = PlethoraQuoteProducer.getMinBoundingBox(profile, hull);
+        if (states.size() > 0) {
+          states.get(states.size() - 1).add(new Pair(bounds, Color.GRAY));
+          setProfileState(selectedState);
+        }
         
         double quote = PlethoraQuoteProducer.calcQuote(profile);
         DecimalFormat df = new DecimalFormat("0.00");

@@ -29,7 +29,7 @@ import java.util.logging.Logger;
  * Looked up the rotation matrix formula on wikipedia.
  * Looked up how to format dollar amounts properly - http://stackoverflow.com/a/13791420/513038
  * Looked up some of the Java API
- * Looked up convenient ways of making a checkbox list element (stack overflow); ended up using a table
+ * Looked up convenient ways of making a checkbox list element; ended up using a table - http://stackoverflow.com/a/19796/513038
  * @author erhannis
  */
 public class PlethoraQuoteProducer {
@@ -48,17 +48,13 @@ public class PlethoraQuoteProducer {
    * @param args the command line arguments
    */
   public static void main(String[] args) {
-    // Debugging
+    //DEBUGGING
 //    args = new String[]{"CutCircularArc.json", "ui"};
     
     if (args.length < 1) {
       System.out.println("Usage: java -jar PlethoraQuoteProducer.java FILENAME.JSON [ui]");
       System.out.println("Including `ui` as the second parameter will open the gui.");
       return;
-//      // Debugging
-//      //args = new String[]{"CutCircularArc.json"};
-//      args = new String[]{"ExtrudeCircularArc.json"};
-//      //args = new String[]{"Rectangle.json"};
     } else if (args.length >= 2) {
       if ("ui".equals(args[1])) {
         MainScreen ms = new MainScreen(args[0]);
@@ -68,22 +64,10 @@ public class PlethoraQuoteProducer {
     }
     String filename = args[0];
     
-    PlethoraQuoteProducer pqp = new PlethoraQuoteProducer();
     try {
-      Profile profile = pqp.parseFile(filename);
-//      profile = genTestProfile();
-//      profile = profile.rotate(Math.PI);
-      double quote = pqp.calcQuote(profile);
+      Profile profile = PlethoraQuoteProducer.parseFile(filename);
+      double quote = PlethoraQuoteProducer.calcQuote(profile);
       DecimalFormat df = new DecimalFormat("0.00");
-//      // Debugging; test many rotations
-//      for (double a = -Math.PI - 1; a < Math.PI + 1; a += 0.01) {
-//        Profile p = profile.rotate(a);
-//        quote = pqp.calcQuote(p);
-//        // Formatting from http://stackoverflow.com/a/13791420/513038
-//        if (!"14.10".equals(df.format(quote))) {
-//          System.out.println("err " + df.format(quote) + " != 4.06 on angle " + a);
-//        }
-//      }
       System.out.println(df.format(quote) + " dollars");
     } catch (FileNotFoundException ex) {
       Logger.getLogger(PlethoraQuoteProducer.class.getName()).log(Level.SEVERE, null, ex);
@@ -334,5 +318,43 @@ public class PlethoraQuoteProducer {
     matCost += minAreaCost;
     
     return timeCost + matCost;
+  }
+  
+  /**
+   * Just so we can see it.  It's duplicating a lot of the work from calcQuote, but eh.
+   * @param profile
+   * @return 
+   */
+  public static Profile getMinBoundingBox(Profile profile, Profile hull) {
+    //Profile hull = profile.constructConvexHull(null);
+    
+    //TODO I could/should maybe move this into a function on Profile or something
+    double minAreaCost = Double.POSITIVE_INFINITY;
+    double minAreaAngle = Double.POSITIVE_INFINITY;
+    Rectangle2D minAreaBounds = null;
+    for (Line2D.Double line : hull.lines) {
+      double angle = -Math.atan2(line.getY2() - line.getY1(), line.getX2() - line.getX1());
+      Profile rotProfile = profile.rotate(angle);
+      // It may be "upside down", but that shouldn't matter.
+      Rectangle2D bounds = rotProfile.calcBounds();
+      double area = (bounds.getWidth() + PADDING) * (bounds.getHeight() + PADDING);
+      double areaCost = area * MATERIAL_COST;
+      if (areaCost < minAreaCost) {
+        minAreaCost = areaCost;
+        minAreaAngle = angle; // Just in case later we want to know.
+        minAreaBounds = bounds;
+      }
+    }
+    Profile boundsProfile = new Profile();
+    double l = minAreaBounds.getX() - (PADDING / 2);
+    double b = minAreaBounds.getY() - (PADDING / 2);
+    double t = b + minAreaBounds.getHeight() + PADDING;
+    double r = l + minAreaBounds.getWidth() + PADDING;
+    boundsProfile.lines.add(new Line2D.Double(l, b, l, t));
+    boundsProfile.lines.add(new Line2D.Double(l, t, r, t));
+    boundsProfile.lines.add(new Line2D.Double(r, t, r, b));
+    boundsProfile.lines.add(new Line2D.Double(r, b, l, b));
+    
+    return boundsProfile.rotate(-minAreaAngle);
   }
 }
