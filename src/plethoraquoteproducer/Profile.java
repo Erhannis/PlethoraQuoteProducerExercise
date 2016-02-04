@@ -229,9 +229,9 @@ public class Profile {
     int count = 0;
     while (true) {
       //DEBUGGING
-//      if (count++ > 30) {
-//        break;
-//      }
+      if (count++ > 50 && PlethoraQuoteProducer.DEBUGGING) {
+        break;
+      }
 if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), null, null, null); //DEBUGGING
       if (curArc.getValue() == null) {
         // Currently on a single point

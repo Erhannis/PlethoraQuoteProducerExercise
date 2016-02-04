@@ -29,6 +29,9 @@ import java.util.logging.Logger;
  * @author erhannis
  */
 public class PlethoraQuoteProducer {
+  
+  // I added this late, so it's not used in all the places it could be.
+  public static final boolean DEBUGGING = true;
 
   public static final double PADDING = 0.1; // inches
   public static final double MATERIAL_COST = 0.75; // $/(in^2)

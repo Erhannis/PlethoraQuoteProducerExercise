@@ -408,11 +408,15 @@ public class MainScreen extends javax.swing.JFrame {
       //addBuilderState();
       
       Profile profile = builder.getProfile();
-      Profile hull = profile.constructConvexHull(this);
-
-      double quote = PlethoraQuoteProducer.calcQuote(profile);
-      DecimalFormat df = new DecimalFormat("0.00");
-      labelQuote.setText(df.format(quote) + " dollars");
+      if (profile.lines.size() > 0 || profile.arcs.size() > 0) {
+        Profile hull = profile.constructConvexHull(this);
+        
+        double quote = PlethoraQuoteProducer.calcQuote(profile);
+        DecimalFormat df = new DecimalFormat("0.00");
+        labelQuote.setText(df.format(quote) + " dollars");
+      } else {
+        labelQuote.setText("? dollars");
+      }
       
       builder = null;
       btnBuilder.setText("Start builder");
