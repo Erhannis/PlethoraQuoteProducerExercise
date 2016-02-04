@@ -6,8 +6,12 @@
 package plethoraquoteproducer;
 
 import java.awt.Color;
+import java.awt.event.ActionEvent;
+import java.awt.geom.Point2D;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.util.Pair;
@@ -33,13 +37,14 @@ public class MainScreen extends javax.swing.JFrame {
     PlethoraQuoteProducer pqp = new PlethoraQuoteProducer();
     try {
       Profile profile = pqp.parseFile(filename);
-      Profile hull = profile.constructConvexHull();
+
+      profile = PlethoraQuoteProducer.genTestProfile();
+//      profile = profile.rotate(Math.PI);
+
+      Profile hull = profile.constructConvexHull(this);
       
       ip.addProfile(profile, Color.BLACK);
       ip.addProfile(hull, Color.CYAN);
-      
-//      profile = genTestProfile();
-//      profile = profile.rotate(Math.PI);
       
 //      double quote = pqp.calcQuote(profile);
 //      DecimalFormat df = new DecimalFormat("0.00");
@@ -53,12 +58,48 @@ public class MainScreen extends javax.swing.JFrame {
     states.add(state);
     if (selectedState < 0) {
       setProfileState(0);
+    } else {
+      labelCurState.setText((selectedState + 1) + "/" + states.size());
     }
   }
   
   private void setProfileState(int index) {
-    selectedState = index;
-    ip.setProfiles(states.get(index));
+    if (index >= 0 && index < states.size()) {
+      selectedState = index;
+      ip.setProfiles(states.get(index));
+      labelCurState.setText((selectedState + 1) + "/" + states.size());
+    }
+  }
+  
+  /**
+   * For debugging purposes, mostly.
+   * @param profile
+   * @param hull 
+   */
+  public void constructAndAddHullState(Profile profile, Profile hull, Point2D curPoint, ArrayList<Pair<Point2D, Arc>> candidates, ArrayList<Point2D> sourceCandidates, Point2D selectedSource) {
+    double ptSize = 0.1;
+    ArrayList<Pair<Profile, Color>> state = new ArrayList<Pair<Profile, Color>>();
+    state.add(new Pair(profile, Color.BLACK));
+    state.add(new Pair(hull.rotate(0), Color.CYAN));
+    state.add(new Pair(Profile.getProfileWPoints(new ArrayList<Point2D>(Arrays.asList(new Point2D[]{curPoint})), ptSize), Color.ORANGE));
+    if (candidates != null) {
+      ArrayList<Point2D> points = new ArrayList<Point2D>();
+      for (Pair<Point2D, Arc> pair : candidates) {
+        points.add(pair.getKey());
+      }
+      state.add(new Pair(Profile.getProfileWPoints(points, ptSize), Color.MAGENTA.darker()));
+    }
+    if (sourceCandidates != null) {
+      state.add(new Pair(Profile.getProfileWPoints(sourceCandidates, ptSize), Color.RED));
+    }
+    if (selectedSource != null) {
+      state.add(new Pair(Profile.getProfileWPoints(new ArrayList<Point2D>(Arrays.asList(new Point2D[]{curPoint})), ptSize), Color.GREEN.darker()));
+    }
+    addState(state);
+    setProfileState(states.size() - 1);
+    if (states.size() == 41) {
+      states = states;
+    }
   }
   
   /**
@@ -75,6 +116,7 @@ public class MainScreen extends javax.swing.JFrame {
     jPanel2 = new javax.swing.JPanel();
     btnPrev = new javax.swing.JButton();
     btnNext = new javax.swing.JButton();
+    labelCurState = new javax.swing.JLabel();
     jMenuBar1 = new javax.swing.JMenuBar();
     jMenu1 = new javax.swing.JMenu();
     jMenuItem1 = new javax.swing.JMenuItem();
@@ -99,6 +141,7 @@ public class MainScreen extends javax.swing.JFrame {
     jSplitPane1.setLeftComponent(jPanel1);
 
     btnPrev.setText("<");
+    btnPrev.setToolTipText("CTRL for first");
     btnPrev.addActionListener(new java.awt.event.ActionListener() {
       public void actionPerformed(java.awt.event.ActionEvent evt) {
         btnPrevActionPerformed(evt);
@@ -106,11 +149,14 @@ public class MainScreen extends javax.swing.JFrame {
     });
 
     btnNext.setText(">");
+    btnNext.setToolTipText("CTRL for last");
     btnNext.addActionListener(new java.awt.event.ActionListener() {
       public void actionPerformed(java.awt.event.ActionEvent evt) {
         btnNextActionPerformed(evt);
       }
     });
+
+    labelCurState.setText("0/0");
 
     javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
     jPanel2.setLayout(jPanel2Layout);
@@ -118,9 +164,12 @@ public class MainScreen extends javax.swing.JFrame {
       jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
       .addGroup(jPanel2Layout.createSequentialGroup()
         .addContainerGap()
-        .addComponent(btnPrev)
-        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-        .addComponent(btnNext)
+        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+          .addGroup(jPanel2Layout.createSequentialGroup()
+            .addComponent(btnPrev)
+            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+            .addComponent(btnNext))
+          .addComponent(labelCurState))
         .addContainerGap(80, Short.MAX_VALUE))
     );
     jPanel2Layout.setVerticalGroup(
@@ -130,7 +179,9 @@ public class MainScreen extends javax.swing.JFrame {
         .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
           .addComponent(btnPrev)
           .addComponent(btnNext))
-        .addContainerGap(281, Short.MAX_VALUE))
+        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+        .addComponent(labelCurState)
+        .addContainerGap(254, Short.MAX_VALUE))
     );
 
     jSplitPane1.setRightComponent(jPanel2);
@@ -171,14 +222,22 @@ public class MainScreen extends javax.swing.JFrame {
   }//GEN-LAST:event_jMenuItem1ActionPerformed
 
   private void btnPrevActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPrevActionPerformed
-    if (selectedState > 0) {
-      setProfileState(selectedState - 1);
+    if ((evt.getModifiers() & ActionEvent.CTRL_MASK) != 0) {
+      setProfileState(0);
+    } else {
+      if (selectedState > 0) {
+        setProfileState(selectedState - 1);
+      }
     }
   }//GEN-LAST:event_btnPrevActionPerformed
 
   private void btnNextActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNextActionPerformed
-    if (selectedState < states.size() - 1) {
-      setProfileState(selectedState + 1);
+    if ((evt.getModifiers() & ActionEvent.CTRL_MASK) != 0) {
+      setProfileState(states.size() - 1);
+    } else {
+      if (selectedState < states.size() - 1) {
+        setProfileState(selectedState + 1);
+      }
     }
   }//GEN-LAST:event_btnNextActionPerformed
 
@@ -227,5 +286,6 @@ public class MainScreen extends javax.swing.JFrame {
   private javax.swing.JPanel jPanel1;
   private javax.swing.JPanel jPanel2;
   private javax.swing.JSplitPane jSplitPane1;
+  private javax.swing.JLabel labelCurState;
   // End of variables declaration//GEN-END:variables
 }

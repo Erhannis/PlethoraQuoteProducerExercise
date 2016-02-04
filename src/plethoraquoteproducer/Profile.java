@@ -9,6 +9,7 @@ import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.Arrays;
 import javafx.util.Pair;
 
 /**
@@ -204,9 +205,10 @@ public class Profile {
    * Construct a profile of the convex hull of THIS profile.
    * Uses a modified version of the gift-wrapping algorithm.
    * //TODO This code makes me suspicious.  I'd like to write a bunch of verification code.
+   * I've included MainScreen so I can call debugging functions on it.
    * @return 
    */
-  public Profile constructConvexHull() {
+  public Profile constructConvexHull(MainScreen ms) {
     Profile hull = new Profile();
     
     Point2D fpl = this.findLeftmostPointOfLines();
@@ -224,10 +226,17 @@ public class Profile {
     boolean leftFirstEdgeTwice = false;
     Arc lastArc = null;
     Arc lastLastArc = null; // Only non-null if equal to lastArc.  These make sure we don't get stuck on a single arc.
+    int count = 0;
     while (true) {
+      //DEBUGGING
+//      if (count++ > 30) {
+//        break;
+//      }
+if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), null, null, null); //DEBUGGING
       if (curArc.getValue() == null) {
         // Currently on a single point
         ArrayList<Pair<Point2D, Arc>> candidates = getCandidateWrappingTargets(curArc.getKey());
+if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), candidates, null, null); //DEBUGGING
         Pair<Point2D, Arc> bestCandidate = null;
         for (Pair<Point2D, Arc> nextCandidate : candidates) {
           if (isPointArcEqual(nextCandidate, curArc) || nextCandidate.getKey().distance(curArc.getKey()) < PlethoraQuoteProducer.SNAP_THRESHOLD) {
@@ -250,6 +259,7 @@ public class Profile {
 //        }
         
         ArrayList<Pair<Point2D, Arc>> candidates = getCandidateWrappingTargets(curArc.getValue());
+if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), candidates, null, null); //DEBUGGING
         Pair<Point2D, Arc> bestCandidate = null;
         for (Pair<Point2D, Arc> nextCandidate : candidates) {
           // Don't land on the same point you're at, and don't land on the same arc you've done for the past two times.
@@ -258,6 +268,16 @@ public class Profile {
           }
           // Find starting point corresponding to the target point
           Pair<Point2D, Arc> tempArc = new Pair<Point2D, Arc>(getCandidateWrappingSource(curArc.getValue(), nextCandidate), curArc.getValue());
+          
+if (ms != null) {ArrayList<Pair<Point2D, Arc>> nc = new ArrayList<Pair<Point2D, Arc>>(); nc.add(nextCandidate); ms.constructAndAddHullState(this, hull, curArc.getKey(), nc, getCandidateWrappingSources(curArc.getValue(), nextCandidate), tempArc.getKey());} //DEBUGGING
+
+          // Not allowed to cut across an arc from start to finish
+          if ((tempArc.getValue().startPoint.distance(tempArc.getKey()) < PlethoraQuoteProducer.SNAP_THRESHOLD
+               && tempArc.getValue().endPoint.distance(nextCandidate.getKey()) < PlethoraQuoteProducer.SNAP_THRESHOLD)
+            || nextCandidate.getKey().distance(tempArc.getKey()) < PlethoraQuoteProducer.SNAP_THRESHOLD) { // and not allowed to jump to the selfsame point
+            continue;
+          }
+
           if (bestCandidate == null || new Line2D.Double(tempArc.getKey(), bestCandidate.getKey()).relativeCCW(nextCandidate.getKey()) == -1) {
             bestCandidate = nextCandidate;
             curArc = tempArc;
@@ -286,6 +306,8 @@ public class Profile {
         break;
       }
     }
+
+if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), null, null, null); //DEBUGGING
     
     return hull;
   }
@@ -402,14 +424,20 @@ public class Profile {
     }
     return result;
   }
-  
-  public Point2D getCandidateWrappingSource(Arc source, Pair<Point2D, Arc> target) {
+
+  /**
+   * Factored out mainly for debugging purposes
+   * @param source
+   * @param target
+   * @return 
+   */
+  public ArrayList<Point2D> getCandidateWrappingSources(Arc source, Pair<Point2D, Arc> target) {
     ArrayList<Point2D> points = new ArrayList<Point2D>();
     // Find the points on the edges of the source arc tangent to which you can draw lines through the target
     double angleDiff = Math.acos(source.radius / source.center.distance(target.getKey()));
     //TODO This line may have the terms backwards, and it sets things slightly awry.
-    double anglePtAbs = Math.atan2(source.center.getY() - target.getKey().getY(), source.center.getX() - target.getKey().getX());
-    //double anglePtAbs = Math.atan2(target.getKey().getY() - source.center.getY(), target.getKey().getX() - source.center.getX());
+    //double anglePtAbs = Math.atan2(source.center.getY() - target.getKey().getY(), source.center.getX() - target.getKey().getX());
+    double anglePtAbs = Math.atan2(target.getKey().getY() - source.center.getY(), target.getKey().getX() - source.center.getX());
     double angle1 = Utils.wrapAngle(anglePtAbs + angleDiff);
     double angle2 = Utils.wrapAngle(anglePtAbs - angleDiff);
     if (source.angleInArc(angle1)) {
@@ -421,6 +449,14 @@ public class Profile {
     // Also include start/end points, 'cause they're on the arc, too, and may be important
     points.add(source.startPoint);
     points.add(source.endPoint);
+    
+    return points;
+  }
+  
+  public Point2D getCandidateWrappingSource(Arc source, Pair<Point2D, Arc> target) {
+    ArrayList<Point2D> points = getCandidateWrappingSources(source, target);
+    double anglePtAbs = Math.atan2(source.center.getY() - target.getKey().getY(), source.center.getX() - target.getKey().getX());
+    //double anglePtAbs = Math.atan2(target.getKey().getY() - source.center.getY(), target.getKey().getX() - source.center.getX());
     
     Point2D bestPoint = null;
     double bestAngle = Double.POSITIVE_INFINITY;
@@ -539,5 +575,25 @@ public class Profile {
       left = leftA.getKey();
     }
     return new Rectangle2D.Double(left.getX(), bottom.getY(), right.getX() - left.getX(), top.getY() - bottom.getY());
+  }
+  
+  /**
+   * For debugging.  Creates a profile with a bunch of arcs circling the specified points.
+   * @param points
+   * @return 
+   */
+  public static Profile getProfileWPoints(ArrayList<Point2D> points, double radius) {
+    Profile profile = new Profile();
+    for (Point2D pt : points) {
+      Arc newArc = new Arc();
+      newArc.radius = radius;
+      newArc.center = new Point2D.Double(pt.getX(), pt.getY());
+      newArc.startAngle = Math.PI;
+      newArc.endAngle = 0.01 - Math.PI;
+      newArc.startPoint = (Point2D.Double)newArc.getPointAtAngle(newArc.startAngle);
+      newArc.endPoint = (Point2D.Double)newArc.getPointAtAngle(newArc.endAngle);
+      profile.arcs.add(newArc);
+    }
+    return profile;
   }
 }

@@ -26,7 +26,7 @@ public class ImagePanel extends javax.swing.JPanel {
     private static final Color COLOR_BACKGROUND = Color.WHITE;
     private static final double VIEW_PRESCALE = 100;
     private static final double SCROLL_SCALE = 1.1;
-    public AffineTransform at = new AffineTransform(VIEW_PRESCALE, 0, 0, VIEW_PRESCALE, 0, 0);
+    public AffineTransform at = new AffineTransform(VIEW_PRESCALE, 0, 0, -VIEW_PRESCALE, 0, 0);
     public AffineTransform ati;
 
     private ArrayList<Pair<Profile, Color>> profiles = new ArrayList<Pair<Profile, Color>>();
@@ -51,8 +51,8 @@ public class ImagePanel extends javax.swing.JPanel {
     }
     
     public void setProfiles(ArrayList<Pair<Profile, Color>> profiles) {
-      profiles.clear();
-      profiles.addAll(profiles);
+      this.profiles.clear();
+      this.profiles.addAll(profiles);
       this.invalidate();
       this.repaint();
     }
@@ -81,7 +81,7 @@ public class ImagePanel extends javax.swing.JPanel {
         }
         for (Arc arc : profile.arcs) {
           //TODO Kinda inefficient
-          Arc2D arc2d = new Arc2D.Double(arc.center.getX() - arc.radius, arc.center.getY() - arc.radius, 2 * arc.radius, 2 * arc.radius, arc.startAngle * (360 / (2*Math.PI)), Utils.mod(arc.endAngle - arc.startAngle, 2 * Math.PI) * (360 / (2*Math.PI)), Arc2D.OPEN);
+          Arc2D arc2d = new Arc2D.Double(arc.center.getX() - arc.radius, arc.center.getY() - arc.radius, 2 * arc.radius, 2 * arc.radius, Utils.mod(-arc.startAngle, 2*Math.PI) * (360 / (2*Math.PI)), Utils.mod(arc.startAngle - arc.endAngle, 2 * Math.PI) * (360 / (2*Math.PI)), Arc2D.OPEN);
           g2.draw(arc2d);
         }
       }

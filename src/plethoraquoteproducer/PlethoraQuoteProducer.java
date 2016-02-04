@@ -240,7 +240,7 @@ public class PlethoraQuoteProducer {
     // Given more time, we could use a more efficient algorithm, but this one
     // was noted for its simplicity.
     double matCost = 0;
-    Profile hull = profile.constructConvexHull();
+    Profile hull = profile.constructConvexHull(null);
     
     //TODO I could/should maybe move this into a function on Profile or something
     double minAreaCost = Double.POSITIVE_INFINITY;
