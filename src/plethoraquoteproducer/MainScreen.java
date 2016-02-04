@@ -22,6 +22,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.util.Pair;
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 
 /**
@@ -217,7 +218,8 @@ public class MainScreen extends javax.swing.JFrame {
     jMenuItem2 = new javax.swing.JMenuItem();
     jMenuItem1 = new javax.swing.JMenuItem();
     jMenuItem3 = new javax.swing.JMenuItem();
-    jMenu2 = new javax.swing.JMenu();
+    jMenu3 = new javax.swing.JMenu();
+    jMenuItem4 = new javax.swing.JMenuItem();
 
     setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -393,8 +395,17 @@ public class MainScreen extends javax.swing.JFrame {
 
     jMenuBar1.add(jMenu1);
 
-    jMenu2.setText("Edit");
-    jMenuBar1.add(jMenu2);
+    jMenu3.setText("Help");
+
+    jMenuItem4.setText("About");
+    jMenuItem4.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        jMenuItem4ActionPerformed(evt);
+      }
+    });
+    jMenu3.add(jMenuItem4);
+
+    jMenuBar1.add(jMenu3);
 
     setJMenuBar(jMenuBar1);
 
@@ -555,6 +566,24 @@ public class MainScreen extends javax.swing.JFrame {
     }
   }//GEN-LAST:event_jMenuItem3ActionPerformed
 
+  private void jMenuItem4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem4ActionPerformed
+    StringBuilder help = new StringBuilder();
+    help.append("Ok, so here's how to use the UI.\n");
+    help.append("First, scroll to zoom in/out.  Use this to move, too.\n");
+    help.append("Now, as the program finds the bounding rectangle, it stores snapshots of the state of things at intervals during the hull generation process.\n");
+    help.append("Use the < and > buttons to view the different states.  (+ctrl for skip)  The different colors mean different things.  Black: profile.\n");
+    help.append("Cyan: hull.  Orange: current point.  Purple: potential targets.  Red: potential sources.  Green: source that got selected.  Pink: new best line.\n");
+    help.append("You can toggle these layers on and off with the checkboxes on the right.\n");
+    help.append("\n");
+    help.append("Clear or New will do basically what you expect.\n");
+    help.append("Clicking `Start builder` will let you edit the (or begin the new) profile.  Click to pick your starting point.  From there, click to add a line\n");
+    help.append("to the clicked point.  For arcs: hold ctrl, click on an arc center and drag out to the angle of the ending point.  Hold ctrl+alt to make\n");
+    help.append("the arc CCW instead of CW.  Hold shift and click to close the path.  Click `Close` to close the path, if you didn't, and perform all calculations.\n");
+    help.append("\n");
+    help.append("Use the menu to import a json file, or export to a json file.");
+    JOptionPane.showMessageDialog(this, help.toString(), "Help", JOptionPane.PLAIN_MESSAGE);
+  }//GEN-LAST:event_jMenuItem4ActionPerformed
+
   /**
    * @param args the command line arguments
    */
@@ -596,11 +625,12 @@ public class MainScreen extends javax.swing.JFrame {
   private javax.swing.JButton btnNext;
   private javax.swing.JButton btnPrev;
   private javax.swing.JMenu jMenu1;
-  private javax.swing.JMenu jMenu2;
+  private javax.swing.JMenu jMenu3;
   private javax.swing.JMenuBar jMenuBar1;
   private javax.swing.JMenuItem jMenuItem1;
   private javax.swing.JMenuItem jMenuItem2;
   private javax.swing.JMenuItem jMenuItem3;
+  private javax.swing.JMenuItem jMenuItem4;
   private javax.swing.JPanel jPanel1;
   private javax.swing.JPanel jPanel2;
   private javax.swing.JScrollPane jScrollPane2;
