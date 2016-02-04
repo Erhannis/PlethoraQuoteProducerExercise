@@ -11,6 +11,8 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,7 +35,7 @@ import java.util.logging.Logger;
 public class PlethoraQuoteProducer {
   
   // I added this late, so it's not used in all the places it could be.
-  public static final boolean DEBUGGING = true;
+  public static final boolean DEBUGGING = false;
 
   public static final double PADDING = 0.1; // inches
   public static final double MATERIAL_COST = 0.75; // $/(in^2)
@@ -47,7 +49,7 @@ public class PlethoraQuoteProducer {
    */
   public static void main(String[] args) {
     // Debugging
-    args = new String[]{"CutCircularArc.json", "ui"};
+//    args = new String[]{"CutCircularArc.json", "ui"};
     
     if (args.length < 1) {
       System.out.println("Usage: java -jar PlethoraQuoteProducer.java FILENAME.JSON [ui]");
@@ -203,6 +205,75 @@ public class PlethoraQuoteProducer {
     }
 
     return profile;
+  }
+  
+  /**
+   * Exports a profile as JSON to a file.
+   * @param profile
+   * @param filename 
+   */
+  public static void saveProfile(Profile profile, String filename) throws IOException {
+    int count = 0; // Not the most random of ids, but hey
+    HashMap<Point2D, Integer> vertices = new HashMap<Point2D, Integer>();
+    for (Line2D line : profile.lines) {
+      if (!vertices.containsKey(line.getP1())) {
+        vertices.put(line.getP1(), count++);
+      }
+      if (!vertices.containsKey(line.getP2())) {
+        vertices.put(line.getP2(), count++);
+      }
+    }
+    for (Arc arc : profile.arcs) {
+      if (!vertices.containsKey(arc.startPoint)) {
+        vertices.put(arc.startPoint, count++);
+      }
+      if (!vertices.containsKey(arc.endPoint)) {
+        vertices.put(arc.endPoint, count++);
+      }
+    }
+    
+    HashMap jRoot = new HashMap();
+    HashMap jVertices = new HashMap();
+    for (Entry<Point2D, Integer> e : vertices.entrySet()) {
+      HashMap jVertex = new HashMap();
+      HashMap jPos = new HashMap();
+      jPos.put("X", e.getKey().getX());
+      jPos.put("Y", e.getKey().getY());
+      jVertex.put("Position", jPos);
+      jVertices.put(e.getValue().toString(), jVertex);
+    }
+    jRoot.put("Vertices", jVertices);
+    HashMap jEdges = new HashMap();
+    for (Line2D line : profile.lines) {
+      HashMap jEdge = new HashMap();
+      jEdge.put("Type", "LineSegment");
+      ArrayList jEdgeVertices = new ArrayList();
+      jEdgeVertices.add(vertices.get(line.getP1()));
+      jEdgeVertices.add(vertices.get(line.getP2()));
+      jEdge.put("Vertices", jEdgeVertices);
+      jEdges.put((count++) + "", jEdge);
+    }
+    for (Arc arc : profile.arcs) {
+      HashMap jEdge = new HashMap();
+      jEdge.put("Type", "CircularArc");
+      ArrayList jEdgeVertices = new ArrayList();
+      jEdgeVertices.add(vertices.get(arc.startPoint));
+      jEdgeVertices.add(vertices.get(arc.endPoint));
+      jEdge.put("Vertices", jEdgeVertices);
+      jEdge.put("ClockwiseFrom", vertices.get(arc.startPoint));
+      HashMap jCenter = new HashMap();
+      jCenter.put("X", arc.center.getX());
+      jCenter.put("Y", arc.center.getY());
+      jEdge.put("Center", jCenter);
+      jEdges.put((count++) + "", jEdge);
+    }
+    jRoot.put("Edges", jEdges);
+    
+    Gson gson = new Gson();
+    FileWriter fw = new FileWriter(filename);
+    gson.toJson(jRoot, fw);
+    fw.flush();
+    fw.close();
   }
   
   /**

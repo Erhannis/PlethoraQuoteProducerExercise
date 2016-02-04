@@ -26,8 +26,10 @@ public class ImagePanel extends javax.swing.JPanel {
 
     private static final Color COLOR_BACKGROUND = Color.WHITE;
     private static final double VIEW_PRESCALE = 100;
+    private static final double VIEW_PRETRANS_X = 50;
+    private static final double VIEW_PRETRANS_Y = 300;
     private static final double SCROLL_SCALE = 1.1;
-    public AffineTransform at = new AffineTransform(VIEW_PRESCALE, 0, 0, -VIEW_PRESCALE, 0, 0);
+    public AffineTransform at = new AffineTransform(VIEW_PRESCALE, 0, 0, -VIEW_PRESCALE, VIEW_PRETRANS_X, VIEW_PRETRANS_Y);
     public AffineTransform ati;
 
     private ArrayList<Pair<Profile, Color>> profiles = new ArrayList<Pair<Profile, Color>>();
