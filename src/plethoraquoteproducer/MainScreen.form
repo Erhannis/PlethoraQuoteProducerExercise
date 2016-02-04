@@ -50,7 +50,7 @@
   <Layout>
     <DimensionLayout dim="0">
       <Group type="103" groupAlignment="0" attributes="0">
-          <Component id="jSplitPane1" alignment="0" max="32767" attributes="0"/>
+          <Component id="jSplitPane1" alignment="0" pref="493" max="32767" attributes="0"/>
       </Group>
     </DimensionLayout>
     <DimensionLayout dim="1">
@@ -107,8 +107,9 @@
                               <Component id="btnNext" min="-2" max="-2" attributes="0"/>
                           </Group>
                           <Component id="labelCurState" alignment="0" min="-2" max="-2" attributes="0"/>
+                          <Component id="labelQuote" alignment="0" min="-2" max="-2" attributes="0"/>
                       </Group>
-                      <EmptySpace pref="80" max="32767" attributes="0"/>
+                      <EmptySpace pref="70" max="32767" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -122,7 +123,9 @@
                       </Group>
                       <EmptySpace max="-2" attributes="0"/>
                       <Component id="labelCurState" min="-2" max="-2" attributes="0"/>
-                      <EmptySpace pref="254" max="32767" attributes="0"/>
+                      <EmptySpace pref="221" max="32767" attributes="0"/>
+                      <Component id="labelQuote" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -149,6 +152,11 @@
             <Component class="javax.swing.JLabel" name="labelCurState">
               <Properties>
                 <Property name="text" type="java.lang.String" value="0/0"/>
+              </Properties>
+            </Component>
+            <Component class="javax.swing.JLabel" name="labelQuote">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="0 dollars"/>
               </Properties>
             </Component>
           </SubComponents>

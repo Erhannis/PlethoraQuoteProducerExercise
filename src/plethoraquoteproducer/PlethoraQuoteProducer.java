@@ -131,11 +131,10 @@ public class PlethoraQuoteProducer {
   
   /**
    * Parses a JSON profile file.
-   * Could probably make this static.
    * @param filename
    * @return Profile parsed
    */
-  public Profile parseFile(String filename) throws FileNotFoundException {
+  public static Profile parseFile(String filename) throws FileNotFoundException {
     Gson gson = new Gson();
     FileReader fr = new FileReader(filename);
     Map m = gson.fromJson(fr, Map.class);
@@ -203,11 +202,10 @@ public class PlethoraQuoteProducer {
   
   /**
    * Takes a profile and calculates a quote for its cost.
-   * Could probably make this static, too.
    * @param profile
    * @return Quote in dollars.
    */
-  public double calcQuote(Profile profile) {
+  public static double calcQuote(Profile profile) {
     // Calculate time cost
     double timeCost = 0;
     for (Line2D.Double line : profile.lines) {

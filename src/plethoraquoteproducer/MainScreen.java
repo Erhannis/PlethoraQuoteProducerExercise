@@ -8,13 +8,15 @@ package plethoraquoteproducer;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.geom.Point2D;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.util.Pair;
+import javax.swing.JFileChooser;
 
 /**
  *
@@ -34,20 +36,22 @@ public class MainScreen extends javax.swing.JFrame {
     ip = new ImagePanel();
     jSplitPane1.setLeftComponent(ip);
     
-    PlethoraQuoteProducer pqp = new PlethoraQuoteProducer();
+    
     try {
-      Profile profile = pqp.parseFile(filename);
+      Profile profile = PlethoraQuoteProducer.parseFile(filename);
 
+      //DEBUGGING remove
       profile = PlethoraQuoteProducer.genTestProfile();
 //      profile = profile.rotate(Math.PI);
 
       Profile hull = profile.constructConvexHull(this);
       
-      ip.addProfile(profile, Color.BLACK);
-      ip.addProfile(hull, Color.CYAN);
+//      ip.addProfile(profile, Color.BLACK);
+//      ip.addProfile(hull, Color.CYAN);
       
-//      double quote = pqp.calcQuote(profile);
-//      DecimalFormat df = new DecimalFormat("0.00");
+      double quote = PlethoraQuoteProducer.calcQuote(profile);
+      DecimalFormat df = new DecimalFormat("0.00");
+      labelQuote.setText(df.format(quote) + " dollars");
 //      System.out.println(df.format(quote) + " dollars");
     } catch (FileNotFoundException ex) {
       Logger.getLogger(PlethoraQuoteProducer.class.getName()).log(Level.SEVERE, null, ex);
@@ -117,6 +121,7 @@ public class MainScreen extends javax.swing.JFrame {
     btnPrev = new javax.swing.JButton();
     btnNext = new javax.swing.JButton();
     labelCurState = new javax.swing.JLabel();
+    labelQuote = new javax.swing.JLabel();
     jMenuBar1 = new javax.swing.JMenuBar();
     jMenu1 = new javax.swing.JMenu();
     jMenuItem1 = new javax.swing.JMenuItem();
@@ -158,6 +163,8 @@ public class MainScreen extends javax.swing.JFrame {
 
     labelCurState.setText("0/0");
 
+    labelQuote.setText("0 dollars");
+
     javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
     jPanel2.setLayout(jPanel2Layout);
     jPanel2Layout.setHorizontalGroup(
@@ -169,8 +176,9 @@ public class MainScreen extends javax.swing.JFrame {
             .addComponent(btnPrev)
             .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
             .addComponent(btnNext))
-          .addComponent(labelCurState))
-        .addContainerGap(80, Short.MAX_VALUE))
+          .addComponent(labelCurState)
+          .addComponent(labelQuote))
+        .addContainerGap(70, Short.MAX_VALUE))
     );
     jPanel2Layout.setVerticalGroup(
       jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -181,7 +189,9 @@ public class MainScreen extends javax.swing.JFrame {
           .addComponent(btnNext))
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
         .addComponent(labelCurState)
-        .addContainerGap(254, Short.MAX_VALUE))
+        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 221, Short.MAX_VALUE)
+        .addComponent(labelQuote)
+        .addContainerGap())
     );
 
     jSplitPane1.setRightComponent(jPanel2);
@@ -207,7 +217,7 @@ public class MainScreen extends javax.swing.JFrame {
     getContentPane().setLayout(layout);
     layout.setHorizontalGroup(
       layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-      .addComponent(jSplitPane1)
+      .addComponent(jSplitPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 493, Short.MAX_VALUE)
     );
     layout.setVerticalGroup(
       layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -217,8 +227,35 @@ public class MainScreen extends javax.swing.JFrame {
     pack();
   }// </editor-fold>//GEN-END:initComponents
 
+  private JFileChooser jChooser = new JFileChooser(new File("./"));
+  
   private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
-    // TODO add your handling code here:
+    if (jChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+      String filename = jChooser.getSelectedFile().getAbsolutePath();
+
+      selectedState = -1;
+      labelCurState.setText("0/0");
+      states.clear();
+      ip.clearProfiles();
+      
+      try {
+        Profile profile = PlethoraQuoteProducer.parseFile(filename);
+
+//        profile = PlethoraQuoteProducer.genTestProfile();
+//        profile = profile.rotate(Math.PI);
+
+        Profile hull = profile.constructConvexHull(this);
+
+//        ip.addProfile(profile, Color.BLACK);
+//        ip.addProfile(hull, Color.CYAN);
+
+        double quote = PlethoraQuoteProducer.calcQuote(profile);
+        DecimalFormat df = new DecimalFormat("0.00");
+        labelQuote.setText(df.format(quote) + " dollars");
+      } catch (FileNotFoundException ex) {
+        Logger.getLogger(PlethoraQuoteProducer.class.getName()).log(Level.SEVERE, null, ex);
+      }
+    }
   }//GEN-LAST:event_jMenuItem1ActionPerformed
 
   private void btnPrevActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnPrevActionPerformed
@@ -287,5 +324,6 @@ public class MainScreen extends javax.swing.JFrame {
   private javax.swing.JPanel jPanel2;
   private javax.swing.JSplitPane jSplitPane1;
   private javax.swing.JLabel labelCurState;
+  private javax.swing.JLabel labelQuote;
   // End of variables declaration//GEN-END:variables
 }
