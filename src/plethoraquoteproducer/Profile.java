@@ -9,7 +9,7 @@ import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashSet;
 import javafx.util.Pair;
 
 /**
@@ -227,16 +227,18 @@ public class Profile {
     Arc lastArc = null;
     Arc lastLastArc = null; // Only non-null if equal to lastArc.  These make sure we don't get stuck on a single arc.
     int count = 0;
+    // I feel like these are just kinda patching leaks and missing something bigger...
+    HashSet<Point2D> spentTargets = new HashSet<Point2D>();
     while (true) {
       //DEBUGGING
-      if (count++ > 50 && PlethoraQuoteProducer.DEBUGGING) {
+      if (count++ > 30 && PlethoraQuoteProducer.DEBUGGING) {
         break;
       }
-if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), null, null, null); //DEBUGGING
+if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), null, null, null, null); //DEBUGGING
       if (curArc.getValue() == null) {
         // Currently on a single point
-        ArrayList<Pair<Point2D, Arc>> candidates = getCandidateWrappingTargets(curArc.getKey());
-if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), candidates, null, null); //DEBUGGING
+        ArrayList<Pair<Point2D, Arc>> candidates = getCandidateWrappingTargets(curArc.getKey(), spentTargets);
+if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), candidates, null, null, null); //DEBUGGING
         Pair<Point2D, Arc> bestCandidate = null;
         for (Pair<Point2D, Arc> nextCandidate : candidates) {
           if (isPointArcEqual(nextCandidate, curArc) || nextCandidate.getKey().distance(curArc.getKey()) < PlethoraQuoteProducer.SNAP_THRESHOLD) {
@@ -244,10 +246,12 @@ if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), candida
           }
           if (bestCandidate == null || new Line2D.Double(curArc.getKey(), bestCandidate.getKey()).relativeCCW(nextCandidate.getKey()) == -1) {
             bestCandidate = nextCandidate;
+if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), candidates, null, null, new Line2D.Double(curArc.getKey(), bestCandidate.getKey())); //DEBUGGING
           }
         }
         hull.lines.add(new Line2D.Double(curArc.getKey(), bestCandidate.getKey()));
         curArc = bestCandidate;
+        spentTargets.add(curArc.getKey());
       } else {
         // Currently on an arc
         //TODO Add arc parts to hull
@@ -258,8 +262,8 @@ if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), candida
 //          
 //        }
         
-        ArrayList<Pair<Point2D, Arc>> candidates = getCandidateWrappingTargets(curArc.getValue());
-if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), candidates, null, null); //DEBUGGING
+        ArrayList<Pair<Point2D, Arc>> candidates = getCandidateWrappingTargets(curArc.getValue(), spentTargets);
+if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), candidates, null, null, null); //DEBUGGING
         Pair<Point2D, Arc> bestCandidate = null;
         for (Pair<Point2D, Arc> nextCandidate : candidates) {
           // Don't land on the same point you're at, and don't land on the same arc you've done for the past two times.
@@ -269,7 +273,7 @@ if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), candida
           // Find starting point corresponding to the target point
           Pair<Point2D, Arc> tempArc = new Pair<Point2D, Arc>(getCandidateWrappingSource(curArc.getValue(), nextCandidate), curArc.getValue());
           
-if (ms != null) {ArrayList<Pair<Point2D, Arc>> nc = new ArrayList<Pair<Point2D, Arc>>(); nc.add(nextCandidate); ms.constructAndAddHullState(this, hull, curArc.getKey(), nc, getCandidateWrappingSources(curArc.getValue(), nextCandidate), tempArc.getKey());} //DEBUGGING
+if (ms != null) {ArrayList<Pair<Point2D, Arc>> nc = new ArrayList<Pair<Point2D, Arc>>(); nc.add(nextCandidate); ms.constructAndAddHullState(this, hull, curArc.getKey(), nc, getCandidateWrappingSources(curArc.getValue(), nextCandidate), tempArc.getKey(), null);} //DEBUGGING
 
           // Not allowed to cut across an arc from start to finish
           if ((tempArc.getValue().startPoint.distance(tempArc.getKey()) < PlethoraQuoteProducer.SNAP_THRESHOLD
@@ -281,18 +285,21 @@ if (ms != null) {ArrayList<Pair<Point2D, Arc>> nc = new ArrayList<Pair<Point2D, 
           if (bestCandidate == null || new Line2D.Double(tempArc.getKey(), bestCandidate.getKey()).relativeCCW(nextCandidate.getKey()) == -1) {
             bestCandidate = nextCandidate;
             curArc = tempArc;
+if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), candidates, null, null, new Line2D.Double(curArc.getKey(), bestCandidate.getKey())); //DEBUGGING
           }
+        }
+        if ((curArc.getValue() == firstArc.getValue() && bestCandidate.getValue() != firstArc.getValue()) || (arcs.size() == 1 && lines.size() == 0)) {
+          if (leftFirstEdgeOnce) {
+            leftFirstEdgeTwice = true;
+            break;
+          }
+          leftFirstEdgeOnce = true;
         }
         hull.lines.add(new Line2D.Double(curArc.getKey(), bestCandidate.getKey()));
         // Doing this bit to avoid weirdness with starting on arcs; make sure if we've wrapped around and a little past the first edge, we stop
         // Also threw in a line for if there's just a single arc, which'd be weird.
-        if ((curArc.getValue() == firstArc.getValue() && bestCandidate.getValue() != firstArc.getValue()) || (arcs.size() == 1 && lines.size() == 0)) {
-          if (leftFirstEdgeOnce) {
-            leftFirstEdgeTwice = true;
-          }
-          leftFirstEdgeOnce = true;
-        }
         curArc = bestCandidate;
+        spentTargets.add(curArc.getKey());
       }
       if (lastArc == curArc.getValue()) {
         lastLastArc = lastArc;
@@ -307,7 +314,7 @@ if (ms != null) {ArrayList<Pair<Point2D, Arc>> nc = new ArrayList<Pair<Point2D, 
       }
     }
 
-if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), null, null, null); //DEBUGGING
+if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), null, null, null, null); //DEBUGGING
     
     return hull;
   }
@@ -318,7 +325,7 @@ if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), null, n
    * @param pt
    * @return 
    */
-  public ArrayList<Pair<Point2D, Arc>> getCandidateWrappingTargets(Point2D pt) {
+  public ArrayList<Pair<Point2D, Arc>> getCandidateWrappingTargets(Point2D pt, HashSet<Point2D> spentTargets) {
     ArrayList<Pair<Point2D, Arc>> result = new ArrayList<Pair<Point2D, Arc>>();
     for (Arc arc : arcs) {
       // Find the two points on the edges of the circle tangent to which you can draw lines through pt
@@ -327,22 +334,32 @@ if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), null, n
       double angle1 = Utils.wrapAngle(anglePtAbs + angleDiff);
       double angle2 = Utils.wrapAngle(anglePtAbs - angleDiff);
       if (arc.angleInArc(angle1)) {
-        result.add(new Pair<Point2D, Arc>(arc.getPointAtAngle(angle1), arc));
+        Point2D p = arc.getPointAtAngle(angle1);
+        if (!spentTargets.contains(p)) {
+          result.add(new Pair<Point2D, Arc>(p, arc));
+        }
       }
       if (arc.angleInArc(angle2)) {
-        result.add(new Pair<Point2D, Arc>(arc.getPointAtAngle(angle2), arc));
+        Point2D p = arc.getPointAtAngle(angle2);
+        if (!spentTargets.contains(p)) {
+          result.add(new Pair<Point2D, Arc>(p, arc));
+        }
       }
       // Also include start/end points, 'cause they're on the arc, too, and may be important
-      result.add(new Pair<Point2D, Arc>(arc.startPoint, arc));
-      result.add(new Pair<Point2D, Arc>(arc.endPoint, arc));
+      if (!spentTargets.contains(arc.startPoint)) {
+        result.add(new Pair<Point2D, Arc>(arc.startPoint, arc));
+      }
+      if (!spentTargets.contains(arc.endPoint)) {
+        result.add(new Pair<Point2D, Arc>(arc.endPoint, arc));
+      }
     }
     for (Line2D.Double line : lines) {
       Point2D p1 = line.getP1();
       Point2D p2 = line.getP2();
-      if (p1 != pt) {
+      if (p1 != pt && !spentTargets.contains(p1)) {
         result.add(new Pair<Point2D, Arc>(p1, null));
       }
-      if (p2 != pt) {
+      if (p2 != pt && !spentTargets.contains(p2)) {
         result.add(new Pair<Point2D, Arc>(p2, null));
       }
     }
@@ -355,12 +372,16 @@ if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), null, n
    * @param arc
    * @return 
    */
-  public ArrayList<Pair<Point2D, Arc>> getCandidateWrappingTargets(Arc arc) {
+  public ArrayList<Pair<Point2D, Arc>> getCandidateWrappingTargets(Arc arc, HashSet<Point2D> spentTargets) {
     ArrayList<Pair<Point2D, Arc>> result = new ArrayList<Pair<Point2D, Arc>>();
     for (Arc arc2 : arcs) {
       if (arc == arc2) {
-        result.add(new Pair<Point2D, Arc>(arc.startPoint, arc));
-        result.add(new Pair<Point2D, Arc>(arc.endPoint, arc));
+        if (!spentTargets.contains(arc.startPoint)) {
+          result.add(new Pair<Point2D, Arc>(arc.startPoint, arc));
+        }
+        if (!spentTargets.contains(arc.endPoint)) {
+          result.add(new Pair<Point2D, Arc>(arc.endPoint, arc));
+        }
       } else {
         // Find the points on the edges of arc2 tangent to which you can draw lines through points on arc
 
@@ -371,10 +392,16 @@ if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), null, n
           double angle1 = Utils.wrapAngle(anglePtAbs + angleDiff);
           double angle2 = Utils.wrapAngle(anglePtAbs - angleDiff);
           if (arc2.angleInArc(angle1)) {
-            result.add(new Pair<Point2D, Arc>(arc2.getPointAtAngle(angle1), arc2));
+            Point2D p = arc2.getPointAtAngle(angle1);
+            if (!spentTargets.contains(p)) {
+              result.add(new Pair<Point2D, Arc>(p, arc2));
+            }
           }
           if (arc2.angleInArc(angle2)) {
-            result.add(new Pair<Point2D, Arc>(arc2.getPointAtAngle(angle2), arc2));
+            Point2D p = arc2.getPointAtAngle(angle2);
+            if (!spentTargets.contains(p)) {
+              result.add(new Pair<Point2D, Arc>(p, arc2));
+            }
           }
         }
         
@@ -385,10 +412,16 @@ if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), null, n
           double angle1 = Utils.wrapAngle(anglePtAbs + angleDiff);
           double angle2 = Utils.wrapAngle(anglePtAbs - angleDiff);
           if (arc2.angleInArc(angle1)) {
-            result.add(new Pair<Point2D, Arc>(arc2.getPointAtAngle(angle1), arc2));
+            Point2D p = arc2.getPointAtAngle(angle1);
+            if (!spentTargets.contains(p)) {
+              result.add(new Pair<Point2D, Arc>(p, arc2));
+            }
           }
           if (arc2.angleInArc(angle2)) {
-            result.add(new Pair<Point2D, Arc>(arc2.getPointAtAngle(angle2), arc2));
+            Point2D p = arc2.getPointAtAngle(angle2);
+            if (!spentTargets.contains(p)) {
+              result.add(new Pair<Point2D, Arc>(p, arc2));
+            }
           }
         }
 
@@ -406,21 +439,35 @@ if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), null, n
         double angle2 = Utils.wrapAngle(anglePtAbs - angleDiff);
         // I could probably check whether the corresponding point on arc is in angle, too, and it'd be more efficient, but this is still accurate.
         if (arc2.angleInArc(angle1)) {
-          result.add(new Pair<Point2D, Arc>(arc2.getPointAtAngle(angle1), arc2));
+          Point2D p = arc2.getPointAtAngle(angle1);
+          if (!spentTargets.contains(p)) {
+            result.add(new Pair<Point2D, Arc>(p, arc2));
+          }
         }
         if (arc2.angleInArc(angle2)) {
-          result.add(new Pair<Point2D, Arc>(arc2.getPointAtAngle(angle2), arc2));
+          Point2D p = arc2.getPointAtAngle(angle2);
+          if (!spentTargets.contains(p)) {
+            result.add(new Pair<Point2D, Arc>(p, arc2));
+          }
         }
         // Also include start/end points, 'cause they're on the arc, too, and may be important
-        result.add(new Pair<Point2D, Arc>(arc2.startPoint, arc2));
-        result.add(new Pair<Point2D, Arc>(arc2.endPoint, arc2));
+        if (!spentTargets.contains(arc2.startPoint)) {
+          result.add(new Pair<Point2D, Arc>(arc2.startPoint, arc2));
+        }
+        if (!spentTargets.contains(arc2.endPoint)) {
+          result.add(new Pair<Point2D, Arc>(arc2.endPoint, arc2));
+        }
       }
     }
     for (Line2D.Double line : lines) {
       Point2D p1 = line.getP1();
       Point2D p2 = line.getP2();
-      result.add(new Pair<Point2D, Arc>(p1, null));
-      result.add(new Pair<Point2D, Arc>(p2, null));
+      if (!spentTargets.contains(p1)) {
+        result.add(new Pair<Point2D, Arc>(p1, null));
+      }
+      if (!spentTargets.contains(p2)) {
+        result.add(new Pair<Point2D, Arc>(p2, null));
+      }
     }
     return result;
   }

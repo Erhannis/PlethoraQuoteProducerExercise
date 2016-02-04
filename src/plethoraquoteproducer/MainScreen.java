@@ -10,6 +10,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -159,7 +160,7 @@ public class MainScreen extends javax.swing.JFrame {
    * @param profile
    * @param hull 
    */
-  public void constructAndAddHullState(Profile profile, Profile hull, Point2D curPoint, ArrayList<Pair<Point2D, Arc>> candidates, ArrayList<Point2D> sourceCandidates, Point2D selectedSource) {
+  public void constructAndAddHullState(Profile profile, Profile hull, Point2D curPoint, ArrayList<Pair<Point2D, Arc>> candidates, ArrayList<Point2D> sourceCandidates, Point2D selectedSource, Line2D bestLine) {
     double ptSize = 0.1;
     ArrayList<Pair<Profile, Color>> state = new ArrayList<Pair<Profile, Color>>();
     state.add(new Pair(profile, Color.BLACK));
@@ -177,6 +178,11 @@ public class MainScreen extends javax.swing.JFrame {
     }
     if (selectedSource != null) {
       state.add(new Pair(Profile.getProfileWPoints(new ArrayList<Point2D>(Arrays.asList(new Point2D[]{selectedSource})), ptSize), Color.GREEN.darker()));
+    }
+    if (bestLine != null) {
+      Profile p = new Profile();
+      p.lines.add(new Line2D.Double(bestLine.getP1(), bestLine.getP2()));
+      state.add(new Pair(p, Color.PINK));
     }
     addState(state);
     setProfileState(states.size() - 1);
