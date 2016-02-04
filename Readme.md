@@ -78,7 +78,7 @@ and it'll bring up the ui.  There's a help dialog.
 
 It works basically by generating a convex hull of the profile, and then tries bounding rectangle parallel to each edge of the hull.  This is based on my (unproven) assertion that one of these edges runs parallel to a minimum bounding rectangle.  I've run a number of tests, and so far it seems to hold up so far, except in the case of, say, a convex shape comprised mostly of arcs (consider a leaf shape), where the true hull has few or no straight edges.  In such a case, my program may be slightly inaccurate (but still seems to tend towards the right answer).
 
-As far as what I'd improve, I've already spent the time to do most of the things I could think of to do.  However, it does bug me that there are a few cases it won't handle quite right.  Other approaches I could try, possibly in conjunction with my current one, include using an optimization algorithm on the function from rotation to cost, and simply reduce it as much as possible like that.  It'd be susceptible to local minima, but in combination with the other algorithm, it might improve handling of the edge cases.
+As far as what I'd improve, I've already spent the time to do most of the things I could think of to do.  However, it does bug me that there are a few cases it won't handle quite right.  Other approaches I could try, possibly in conjunction with my current one, include using an optimization algorithm on the function from rotation to cost, and simply reduce it as much as possible like that.  It'd be susceptible to local minima, but in combination with the other algorithm, it might improve handling of the edge cases.  I could also use a more efficient convex hull algorithm.
 
 Things I looked up:
 * Parsing JSON in Java - used GSON
