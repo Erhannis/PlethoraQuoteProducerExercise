@@ -273,9 +273,10 @@ public class PlethoraQuoteProducer {
     }
     for (Arc arc : profile.arcs) {
       double dist = arc.arcLength();
-      // Assumes non-zero radius.
-      double speed = MAX_SPEED * Math.exp(-1 / arc.radius);
-      timeCost += (dist / speed) * TIME_COST;
+      if (arc.radius > 0) {
+        double speed = MAX_SPEED * Math.exp(-1 / arc.radius);
+        timeCost += (dist / speed) * TIME_COST;
+      }
     }
     
     // Calculate materials cost
