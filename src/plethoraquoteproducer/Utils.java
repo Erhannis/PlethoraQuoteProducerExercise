@@ -41,4 +41,15 @@ public class Utils {
   public static double wrapAngle(double angle) {
     return Utils.mod(angle + Math.PI, 2 * Math.PI) - Math.PI;
   }
+  
+  /**
+   * This formula gets used a lot, but I only just now added it here.
+   * Probably just as well; less overhead, and it's not like it's that complicated.
+   * @param from
+   * @param to
+   * @return 
+   */
+  public static double angleFromTo(Point2D from, Point2D to) {
+    return Math.atan2(to.getY() - from.getY(), to.getX() - from.getX());
+  }
 }

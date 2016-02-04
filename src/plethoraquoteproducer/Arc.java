@@ -37,4 +37,8 @@ public class Arc {
   public Point2D getPointAtAngle(double angle) {
     return new Point2D.Double(center.getX() + (radius * Math.cos(angle)), center.getY() + (radius * Math.sin(angle)));
   }
+
+  public static Point2D getPointAtAngle(Point2D center, double radius, double angle) {
+    return new Point2D.Double(center.getX() + (radius * Math.cos(angle)), center.getY() + (radius * Math.sin(angle)));
+  }
 }
