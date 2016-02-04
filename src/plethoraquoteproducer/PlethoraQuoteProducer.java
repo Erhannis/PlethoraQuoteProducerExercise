@@ -49,7 +49,7 @@ public class PlethoraQuoteProducer {
    */
   public static void main(String[] args) {
     //DEBUGGING
-//    args = new String[]{"CutCircularArc.json", "ui"};
+//    args = new String[]{"ExtrudeCircularArc.json", "ui"};
     
     if (args.length < 1) {
       System.out.println("Usage: java -jar PlethoraQuoteProducer.java FILENAME.JSON [ui]");

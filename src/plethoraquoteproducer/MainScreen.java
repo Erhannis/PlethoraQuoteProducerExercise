@@ -31,6 +31,8 @@ import javax.swing.table.DefaultTableModel;
  */
 public class MainScreen extends javax.swing.JFrame {
 
+  private static final double ROTATION_ANGLE = Math.PI / 20;
+  
   private ImagePanel ip;
   private ArrayList<ArrayList<Pair<Profile, Color>>> states = new ArrayList<ArrayList<Pair<Profile, Color>>>();
   private int selectedState = -1;
@@ -109,23 +111,26 @@ public class MainScreen extends javax.swing.JFrame {
     
     try {
       Profile profile = PlethoraQuoteProducer.parseFile(filename);
-
-      Profile hull = profile.constructConvexHull(this);
-
-      Profile bounds = PlethoraQuoteProducer.getMinBoundingBox(profile, hull);
-      if (states.size() > 0) {
-        states.get(states.size() - 1).add(new Pair(bounds, Color.GRAY));
-        setProfileState(selectedState);
-      }
-      
-      double quote = PlethoraQuoteProducer.calcQuote(profile);
-      DecimalFormat df = new DecimalFormat("0.00");
-      labelQuote.setText(df.format(quote) + " dollars");
+      doCalculations(profile);
     } catch (FileNotFoundException ex) {
       Logger.getLogger(PlethoraQuoteProducer.class.getName()).log(Level.SEVERE, null, ex);
     }
   }
 
+  private void doCalculations(Profile profile) {
+    Profile hull = profile.constructConvexHull(this);
+
+    Profile bounds = PlethoraQuoteProducer.getMinBoundingBox(profile, hull);
+    if (states.size() > 0) {
+      states.get(states.size() - 1).add(new Pair(bounds, Color.GRAY));
+      setProfileState(selectedState);
+    }
+
+    double quote = PlethoraQuoteProducer.calcQuote(profile);
+    DecimalFormat df = new DecimalFormat("0.00");
+    labelQuote.setText(df.format(quote) + " dollars");
+  }
+  
   private void addState(ArrayList<Pair<Profile, Color>> state) {
     states.add(state);
     if (selectedState < 0) {
@@ -213,6 +218,8 @@ public class MainScreen extends javax.swing.JFrame {
     tableLayers = new javax.swing.JTable();
     labelY = new javax.swing.JLabel();
     labelX = new javax.swing.JLabel();
+    btnCW = new javax.swing.JButton();
+    btnCCW = new javax.swing.JButton();
     jMenuBar1 = new javax.swing.JMenuBar();
     jMenu1 = new javax.swing.JMenu();
     jMenuItem2 = new javax.swing.JMenuItem();
@@ -312,6 +319,20 @@ public class MainScreen extends javax.swing.JFrame {
 
     labelX.setText("0");
 
+    btnCW.setText("CW");
+    btnCW.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        btnCWActionPerformed(evt);
+      }
+    });
+
+    btnCCW.setText("CCW");
+    btnCCW.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        btnCCWActionPerformed(evt);
+      }
+    });
+
     javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
     jPanel2.setLayout(jPanel2Layout);
     jPanel2Layout.setHorizontalGroup(
@@ -324,10 +345,14 @@ public class MainScreen extends javax.swing.JFrame {
               .addGroup(jPanel2Layout.createSequentialGroup()
                 .addComponent(btnPrev)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(btnNext))
+                .addComponent(btnNext)
+                .addGap(18, 18, 18)
+                .addComponent(btnCCW)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(btnCW))
               .addComponent(labelCurState)
               .addComponent(labelQuote))
-            .addContainerGap(172, Short.MAX_VALUE))
+            .addContainerGap(76, Short.MAX_VALUE))
           .addGroup(jPanel2Layout.createSequentialGroup()
             .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
               .addGroup(jPanel2Layout.createSequentialGroup()
@@ -347,7 +372,10 @@ public class MainScreen extends javax.swing.JFrame {
         .addContainerGap()
         .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
           .addComponent(btnPrev)
-          .addComponent(btnNext))
+          .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+            .addComponent(btnNext)
+            .addComponent(btnCW)
+            .addComponent(btnCCW)))
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
         .addComponent(labelCurState)
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -433,18 +461,7 @@ public class MainScreen extends javax.swing.JFrame {
       
       try {
         Profile profile = PlethoraQuoteProducer.parseFile(filename);
-
-        Profile hull = profile.constructConvexHull(this);
-
-        Profile bounds = PlethoraQuoteProducer.getMinBoundingBox(profile, hull);
-        if (states.size() > 0) {
-          states.get(states.size() - 1).add(new Pair(bounds, Color.GRAY));
-          setProfileState(selectedState);
-        }
-        
-        double quote = PlethoraQuoteProducer.calcQuote(profile);
-        DecimalFormat df = new DecimalFormat("0.00");
-        labelQuote.setText(df.format(quote) + " dollars");
+        doCalculations(profile);
       } catch (FileNotFoundException ex) {
         Logger.getLogger(PlethoraQuoteProducer.class.getName()).log(Level.SEVERE, null, ex);
       }
@@ -524,17 +541,7 @@ public class MainScreen extends javax.swing.JFrame {
       
       Profile profile = builder.getProfile();
       if (profile.lines.size() > 0 || profile.arcs.size() > 0) {
-        Profile hull = profile.constructConvexHull(this);
-        
-        Profile bounds = PlethoraQuoteProducer.getMinBoundingBox(profile, hull);
-        if (states.size() > 0) {
-          states.get(states.size() - 1).add(new Pair(bounds, Color.GRAY));
-          setProfileState(selectedState);
-        }
-        
-        double quote = PlethoraQuoteProducer.calcQuote(profile);
-        DecimalFormat df = new DecimalFormat("0.00");
-        labelQuote.setText(df.format(quote) + " dollars");
+        doCalculations(profile);
       } else {
         labelQuote.setText("? dollars");
       }
@@ -584,6 +591,24 @@ public class MainScreen extends javax.swing.JFrame {
     JOptionPane.showMessageDialog(this, help.toString(), "Help", JOptionPane.PLAIN_MESSAGE);
   }//GEN-LAST:event_jMenuItem4ActionPerformed
 
+  private void btnCCWActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCCWActionPerformed
+    if (selectedState >= 0 && selectedState < states.size() && states.get(selectedState).size() > 0) {
+      Profile profile = states.get(selectedState).get(0).getKey();
+      profile = profile.rotate(ROTATION_ANGLE);
+      clear();
+      doCalculations(profile);
+    }
+  }//GEN-LAST:event_btnCCWActionPerformed
+
+  private void btnCWActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCWActionPerformed
+    if (selectedState >= 0 && selectedState < states.size() && states.get(selectedState).size() > 0) {
+      Profile profile = states.get(selectedState).get(0).getKey();
+      profile = profile.rotate(-ROTATION_ANGLE);
+      clear();
+      doCalculations(profile);
+    }
+  }//GEN-LAST:event_btnCWActionPerformed
+
   /**
    * @param args the command line arguments
    */
@@ -621,6 +646,8 @@ public class MainScreen extends javax.swing.JFrame {
 
   // Variables declaration - do not modify//GEN-BEGIN:variables
   private javax.swing.JButton btnBuilder;
+  private javax.swing.JButton btnCCW;
+  private javax.swing.JButton btnCW;
   private javax.swing.JButton btnClear;
   private javax.swing.JButton btnNext;
   private javax.swing.JButton btnPrev;

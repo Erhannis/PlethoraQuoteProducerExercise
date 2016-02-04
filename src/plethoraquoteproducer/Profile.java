@@ -294,6 +294,10 @@ if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), candida
           // We've cut across a hole and are leaving from the other side; put down a line before we go
           hull.lines.add(new Line2D.Double(startArc.getKey(), curArc.getKey()));
         }
+        if (bestCandidate == null) {
+          // Couldn't find a spot to go to - may be done.  Otherwise, just broken.
+          break;
+        }
         if ((curArc.getValue() == firstArc.getValue() && bestCandidate.getValue() != firstArc.getValue()) || (arcs.size() == 1 && lines.size() == 0)) {
           if (leftFirstEdgeOnce) {
             leftFirstEdgeTwice = true;
