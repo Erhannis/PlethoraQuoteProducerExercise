@@ -323,7 +323,7 @@ if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), null, n
     for (Arc arc : arcs) {
       // Find the two points on the edges of the circle tangent to which you can draw lines through pt
       double angleDiff = Math.acos(arc.radius / arc.center.distance(pt));
-      double anglePtAbs = Math.atan2(arc.center.getY() - pt.getY(), arc.center.getX() - pt.getX());
+      double anglePtAbs = Math.atan2(pt.getY() - arc.center.getY(), pt.getX() - arc.center.getX());
       double angle1 = Utils.wrapAngle(anglePtAbs + angleDiff);
       double angle2 = Utils.wrapAngle(anglePtAbs - angleDiff);
       if (arc.angleInArc(angle1)) {

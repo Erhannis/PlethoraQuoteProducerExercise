@@ -18,12 +18,17 @@ public class ProfileBuilder {
   private Point2D.Double curPoint;
   
   public ProfileBuilder() {
-    this(new Point2D.Double(0, 0));
+    this(null, new Point2D.Double(0, 0));
   }
   
-  public ProfileBuilder(Point2D start) {
-    firstPoint = new Point2D.Double(start.getX(), start.getY());
-    curPoint = firstPoint;
+  public ProfileBuilder(Profile profile, Point2D start) {
+    if (profile != null) {
+      this.profile = profile;
+    }
+    if (start != null) {
+      firstPoint = new Point2D.Double(start.getX(), start.getY());
+      curPoint = firstPoint;
+    }
   }
   
   public Profile getProfile() {
@@ -34,25 +39,59 @@ public class ProfileBuilder {
     lineTo(Arc.getPointAtAngle(curPoint, dist, angle));
   }
   
+  private boolean checkNotStarted(Point2D pt) {
+    if (curPoint == null) {
+      firstPoint = new Point2D.Double(pt.getX(), pt.getY());
+      curPoint = firstPoint;
+      return true;
+    }
+    return false;
+  }
+  
   public void lineTo(Point2D pt) {
+    if (checkNotStarted(pt)) return;
     Line2D.Double line = new Line2D.Double(curPoint, pt);
     profile.lines.add(line);
     curPoint = new Point2D.Double(pt.getX(), pt.getY());
   }
+
+  /**
+   * It is assumed that ||start - center|| defines the radius.
+   * @param center
+   * @param start
+   * @param end
+   * @param ccw 
+   */
+  public void arc(Point2D center, Point2D end, boolean ccw) {
+    if (checkNotStarted(center)) return;
+    double sa = Utils.angleFromTo(center, curPoint);
+    double ea = Utils.angleFromTo(center, end);
+    double rads = Utils.wrapAngle(ea - sa);
+    arc(center, curPoint.distance(center), rads, ccw);
+  }
   
-  public void arc(Point2D center, double radius, double radians) {
+  public void arc(Point2D center, double radius, double radians, boolean ccw) {
+    if (checkNotStarted(center)) return;
     Arc arc = new Arc();
     arc.center = new Point2D.Double(center.getX(), center.getY());
     arc.radius = radius;
     arc.startAngle = Utils.angleFromTo(center, curPoint);
     arc.startPoint = curPoint;
     arc.endAngle = Utils.wrapAngle(arc.startAngle + radians);
-    Point2D ep = arc.getPointAtAngle(arc.endAngle);
-    arc.endPoint = new Point2D.Double(ep.getX(), ep.getY());
+    Point2D endPoint = arc.getPointAtAngle(arc.endAngle);
+    arc.endPoint = new Point2D.Double(endPoint.getX(), endPoint.getY());
+    
+    if (ccw) {
+      double angle = arc.startAngle;
+      Point2D.Double point = arc.startPoint;
+      arc.startAngle = arc.endAngle;
+      arc.startPoint = arc.endPoint;
+      arc.endAngle = angle;
+      arc.endPoint = point;
+    }
     
     profile.arcs.add(arc);
-    
-    curPoint = new Point2D.Double(arc.endPoint.getX(), arc.endPoint.getY());
+    curPoint = new Point2D.Double(endPoint.getX(), endPoint.getY());
   }
   
   /**
@@ -60,6 +99,8 @@ public class ProfileBuilder {
    * maybe that's a good thing to test.
    */
   public void lineClose() {
+    if (curPoint == null) return;
+    if (curPoint.getX() == firstPoint.getX() && curPoint.getY() == firstPoint.getY()) return;
     lineTo(firstPoint);
   }
 }

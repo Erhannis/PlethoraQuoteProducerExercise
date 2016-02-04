@@ -7,6 +7,8 @@ package plethoraquoteproducer;
 
 import java.awt.Color;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -28,12 +30,61 @@ public class MainScreen extends javax.swing.JFrame {
   private ArrayList<ArrayList<Pair<Profile, Color>>> states = new ArrayList<ArrayList<Pair<Profile, Color>>>();
   private int selectedState = -1;
   
+  private ProfileBuilder builder;
+  
   /**
    * Creates new form MainScreen
    */
   public MainScreen(String filename) {
     initComponents();
     ip = new ImagePanel();
+    ip.addMouseListener(new MouseListener() {
+      @Override
+      public void mouseClicked(MouseEvent e) {
+      }
+
+      private Point2D startedAt = null;
+      
+      @Override
+      public void mousePressed(MouseEvent e) {
+        if (builder != null) {
+          Point2D m = ip.ati.transform(new Point2D.Double(e.getX(), e.getY()), null);
+          startedAt = m;
+        }
+      }
+
+      @Override
+      public void mouseReleased(MouseEvent e) {
+        if (builder != null && startedAt != null) {
+          if (e.isShiftDown()) {
+            // Close path
+            builder.lineClose();
+          } else {
+            // Add edge
+            Point2D m = ip.ati.transform(new Point2D.Double(e.getX(), e.getY()), null);
+            if (e.isControlDown()) {
+              // Make arc
+              boolean ccw = e.isAltDown();
+              builder.arc(startedAt, m, ccw);
+            } else {
+              // Revert to line
+              builder.lineTo(m);
+            }
+          }
+
+          addBuilderState();
+          startedAt = null;
+        }
+      }
+
+      @Override
+      public void mouseEntered(MouseEvent e) {
+      }
+
+      @Override
+      public void mouseExited(MouseEvent e) {
+      }
+    });
     jSplitPane1.setLeftComponent(ip);
     
     
@@ -122,8 +173,11 @@ public class MainScreen extends javax.swing.JFrame {
     btnNext = new javax.swing.JButton();
     labelCurState = new javax.swing.JLabel();
     labelQuote = new javax.swing.JLabel();
+    btnBuilder = new javax.swing.JButton();
+    btnClear = new javax.swing.JButton();
     jMenuBar1 = new javax.swing.JMenuBar();
     jMenu1 = new javax.swing.JMenu();
+    jMenuItem2 = new javax.swing.JMenuItem();
     jMenuItem1 = new javax.swing.JMenuItem();
     jMenu2 = new javax.swing.JMenu();
 
@@ -165,6 +219,20 @@ public class MainScreen extends javax.swing.JFrame {
 
     labelQuote.setText("0 dollars");
 
+    btnBuilder.setText("Start builder");
+    btnBuilder.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        btnBuilderActionPerformed(evt);
+      }
+    });
+
+    btnClear.setText("Clear");
+    btnClear.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        btnClearActionPerformed(evt);
+      }
+    });
+
     javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
     jPanel2.setLayout(jPanel2Layout);
     jPanel2Layout.setHorizontalGroup(
@@ -177,8 +245,10 @@ public class MainScreen extends javax.swing.JFrame {
             .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
             .addComponent(btnNext))
           .addComponent(labelCurState)
-          .addComponent(labelQuote))
-        .addContainerGap(70, Short.MAX_VALUE))
+          .addComponent(labelQuote)
+          .addComponent(btnBuilder)
+          .addComponent(btnClear))
+        .addContainerGap(34, Short.MAX_VALUE))
     );
     jPanel2Layout.setVerticalGroup(
       jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -189,14 +259,26 @@ public class MainScreen extends javax.swing.JFrame {
           .addComponent(btnNext))
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
         .addComponent(labelCurState)
-        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 221, Short.MAX_VALUE)
+        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
         .addComponent(labelQuote)
+        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 143, Short.MAX_VALUE)
+        .addComponent(btnClear)
+        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+        .addComponent(btnBuilder)
         .addContainerGap())
     );
 
     jSplitPane1.setRightComponent(jPanel2);
 
     jMenu1.setText("File");
+
+    jMenuItem2.setText("New");
+    jMenuItem2.addActionListener(new java.awt.event.ActionListener() {
+      public void actionPerformed(java.awt.event.ActionEvent evt) {
+        jMenuItem2ActionPerformed(evt);
+      }
+    });
+    jMenu1.add(jMenuItem2);
 
     jMenuItem1.setText("Parse...");
     jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
@@ -217,7 +299,7 @@ public class MainScreen extends javax.swing.JFrame {
     getContentPane().setLayout(layout);
     layout.setHorizontalGroup(
       layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-      .addComponent(jSplitPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 493, Short.MAX_VALUE)
+      .addComponent(jSplitPane1)
     );
     layout.setVerticalGroup(
       layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -233,10 +315,7 @@ public class MainScreen extends javax.swing.JFrame {
     if (jChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
       String filename = jChooser.getSelectedFile().getAbsolutePath();
 
-      selectedState = -1;
-      labelCurState.setText("0/0");
-      states.clear();
-      ip.clearProfiles();
+      clear();
       
       try {
         Profile profile = PlethoraQuoteProducer.parseFile(filename);
@@ -278,6 +357,68 @@ public class MainScreen extends javax.swing.JFrame {
     }
   }//GEN-LAST:event_btnNextActionPerformed
 
+  private void clear() {
+    selectedState = -1;
+    labelQuote.setText("? dollars");
+    labelCurState.setText("0/0");
+    states.clear();
+    ip.clearProfiles();
+  }
+  
+  private void btnClearActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnClearActionPerformed
+    if (builder != null) {
+      builder = null;
+      clear();
+      btnBuilderActionPerformed(evt);
+    } else {
+      clear();
+    }
+  }//GEN-LAST:event_btnClearActionPerformed
+
+  private void jMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem2ActionPerformed
+    clear();
+  }//GEN-LAST:event_jMenuItem2ActionPerformed
+
+  private void addBuilderState() {
+    if (builder != null) {
+      ArrayList<Pair<Profile, Color>> state = new ArrayList<Pair<Profile, Color>>();
+      state.add(new Pair<Profile, Color>(builder.getProfile(), Color.BLACK));
+      addState(state);
+      setProfileState(states.size() - 1);
+    }
+  }
+  
+  private void btnBuilderActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnBuilderActionPerformed
+    if (builder == null) {
+      // Start builder
+      Profile startProfile = null;
+      if (selectedState >= 0 && selectedState < states.size() && states.get(selectedState).size() > 0) {
+        startProfile = states.get(selectedState).get(0).getKey();
+      }
+      clear();
+      builder = new ProfileBuilder(startProfile, null);
+      addBuilderState();
+      
+      btnBuilder.setText("Close");
+    } else {
+      // Close and finalize
+      clear();
+      
+      builder.lineClose();
+      //addBuilderState();
+      
+      Profile profile = builder.getProfile();
+      Profile hull = profile.constructConvexHull(this);
+
+      double quote = PlethoraQuoteProducer.calcQuote(profile);
+      DecimalFormat df = new DecimalFormat("0.00");
+      labelQuote.setText(df.format(quote) + " dollars");
+      
+      builder = null;
+      btnBuilder.setText("Start builder");
+    }
+  }//GEN-LAST:event_btnBuilderActionPerformed
+
   /**
    * @param args the command line arguments
    */
@@ -314,12 +455,15 @@ public class MainScreen extends javax.swing.JFrame {
   }
 
   // Variables declaration - do not modify//GEN-BEGIN:variables
+  private javax.swing.JButton btnBuilder;
+  private javax.swing.JButton btnClear;
   private javax.swing.JButton btnNext;
   private javax.swing.JButton btnPrev;
   private javax.swing.JMenu jMenu1;
   private javax.swing.JMenu jMenu2;
   private javax.swing.JMenuBar jMenuBar1;
   private javax.swing.JMenuItem jMenuItem1;
+  private javax.swing.JMenuItem jMenuItem2;
   private javax.swing.JPanel jPanel1;
   private javax.swing.JPanel jPanel2;
   private javax.swing.JSplitPane jSplitPane1;
