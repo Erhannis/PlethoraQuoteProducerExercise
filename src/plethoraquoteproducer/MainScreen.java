@@ -9,6 +9,7 @@ import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -19,6 +20,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.util.Pair;
 import javax.swing.JFileChooser;
+import javax.swing.table.DefaultTableModel;
 
 /**
  *
@@ -29,6 +31,7 @@ public class MainScreen extends javax.swing.JFrame {
   private ImagePanel ip;
   private ArrayList<ArrayList<Pair<Profile, Color>>> states = new ArrayList<ArrayList<Pair<Profile, Color>>>();
   private int selectedState = -1;
+  private DefaultTableModel layersModel;
   
   private ProfileBuilder builder;
   
@@ -37,7 +40,8 @@ public class MainScreen extends javax.swing.JFrame {
    */
   public MainScreen(String filename) {
     initComponents();
-    ip = new ImagePanel();
+    layersModel = (DefaultTableModel)tableLayers.getModel();
+    ip = new ImagePanel(layersModel);
     ip.addMouseListener(new MouseListener() {
       @Override
       public void mouseClicked(MouseEvent e) {
@@ -85,6 +89,18 @@ public class MainScreen extends javax.swing.JFrame {
       public void mouseExited(MouseEvent e) {
       }
     });
+    ip.addMouseMotionListener(new MouseMotionListener() {
+      @Override
+      public void mouseDragged(MouseEvent e) {
+      }
+
+      @Override
+      public void mouseMoved(MouseEvent e) {
+        Point2D m = ip.ati.transform(new Point2D.Double(e.getX(), e.getY()), null);
+        labelX.setText(m.getX() + "");
+        labelY.setText(m.getY() + "");
+      }
+    });
     jSplitPane1.setLeftComponent(ip);
     
     
@@ -123,6 +139,18 @@ public class MainScreen extends javax.swing.JFrame {
       selectedState = index;
       ip.setProfiles(states.get(index));
       labelCurState.setText((selectedState + 1) + "/" + states.size());
+      updateLayersTable();
+    }
+  }
+  
+  private void updateLayersTable() {
+    layersModel.setNumRows(0);
+    if (selectedState >= 0) {
+      ArrayList<Pair<Profile, Color>> state = states.get(selectedState);
+      for (int i = 0; i < state.size(); i++) {
+        Profile profile = state.get(i).getKey();
+        layersModel.addRow(new Object[]{true, i, profile.lines.size(), profile.arcs.size()});
+      }
     }
   }
   
@@ -148,11 +176,11 @@ public class MainScreen extends javax.swing.JFrame {
       state.add(new Pair(Profile.getProfileWPoints(sourceCandidates, ptSize), Color.RED));
     }
     if (selectedSource != null) {
-      state.add(new Pair(Profile.getProfileWPoints(new ArrayList<Point2D>(Arrays.asList(new Point2D[]{curPoint})), ptSize), Color.GREEN.darker()));
+      state.add(new Pair(Profile.getProfileWPoints(new ArrayList<Point2D>(Arrays.asList(new Point2D[]{selectedSource})), ptSize), Color.GREEN.darker()));
     }
     addState(state);
     setProfileState(states.size() - 1);
-    if (states.size() == 41) {
+    if (states.size() == 8) {
       states = states;
     }
   }
@@ -175,6 +203,10 @@ public class MainScreen extends javax.swing.JFrame {
     labelQuote = new javax.swing.JLabel();
     btnBuilder = new javax.swing.JButton();
     btnClear = new javax.swing.JButton();
+    jScrollPane2 = new javax.swing.JScrollPane();
+    tableLayers = new javax.swing.JTable();
+    labelY = new javax.swing.JLabel();
+    labelX = new javax.swing.JLabel();
     jMenuBar1 = new javax.swing.JMenuBar();
     jMenu1 = new javax.swing.JMenu();
     jMenuItem2 = new javax.swing.JMenuItem();
@@ -183,18 +215,18 @@ public class MainScreen extends javax.swing.JFrame {
 
     setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-    jSplitPane1.setDividerLocation(350);
+    jSplitPane1.setDividerLocation(500);
     jSplitPane1.setResizeWeight(1.0);
 
     javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
     jPanel1.setLayout(jPanel1Layout);
     jPanel1Layout.setHorizontalGroup(
       jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-      .addGap(0, 350, Short.MAX_VALUE)
+      .addGap(0, 500, Short.MAX_VALUE)
     );
     jPanel1Layout.setVerticalGroup(
       jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-      .addGap(0, 326, Short.MAX_VALUE)
+      .addGap(0, 379, Short.MAX_VALUE)
     );
 
     jSplitPane1.setLeftComponent(jPanel1);
@@ -233,6 +265,45 @@ public class MainScreen extends javax.swing.JFrame {
       }
     });
 
+    tableLayers.setModel(new javax.swing.table.DefaultTableModel(
+      new Object [][] {
+
+      },
+      new String [] {
+        "Show", "Layer", "Lines", "Arcs"
+      }
+    ) {
+      Class[] types = new Class [] {
+        java.lang.Boolean.class, java.lang.String.class, java.lang.Integer.class, java.lang.Integer.class
+      };
+      boolean[] canEdit = new boolean [] {
+        true, false, false, false
+      };
+
+      public Class getColumnClass(int columnIndex) {
+        return types [columnIndex];
+      }
+
+      public boolean isCellEditable(int rowIndex, int columnIndex) {
+        return canEdit [columnIndex];
+      }
+    });
+    tableLayers.addPropertyChangeListener(new java.beans.PropertyChangeListener() {
+      public void propertyChange(java.beans.PropertyChangeEvent evt) {
+        tableLayersPropertyChange(evt);
+      }
+    });
+    tableLayers.addVetoableChangeListener(new java.beans.VetoableChangeListener() {
+      public void vetoableChange(java.beans.PropertyChangeEvent evt)throws java.beans.PropertyVetoException {
+        tableLayersVetoableChange(evt);
+      }
+    });
+    jScrollPane2.setViewportView(tableLayers);
+
+    labelY.setText("0");
+
+    labelX.setText("0");
+
     javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
     jPanel2.setLayout(jPanel2Layout);
     jPanel2Layout.setHorizontalGroup(
@@ -241,14 +312,26 @@ public class MainScreen extends javax.swing.JFrame {
         .addContainerGap()
         .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
           .addGroup(jPanel2Layout.createSequentialGroup()
-            .addComponent(btnPrev)
-            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-            .addComponent(btnNext))
-          .addComponent(labelCurState)
-          .addComponent(labelQuote)
-          .addComponent(btnBuilder)
-          .addComponent(btnClear))
-        .addContainerGap(34, Short.MAX_VALUE))
+            .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+              .addGroup(jPanel2Layout.createSequentialGroup()
+                .addComponent(btnPrev)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(btnNext))
+              .addComponent(labelCurState)
+              .addComponent(labelQuote))
+            .addContainerGap(172, Short.MAX_VALUE))
+          .addGroup(jPanel2Layout.createSequentialGroup()
+            .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+              .addGroup(jPanel2Layout.createSequentialGroup()
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                  .addComponent(btnBuilder)
+                  .addComponent(btnClear))
+                .addGap(18, 18, 18)
+                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                  .addComponent(labelX, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                  .addComponent(labelY, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+              .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 206, javax.swing.GroupLayout.PREFERRED_SIZE))
+            .addGap(0, 0, Short.MAX_VALUE))))
     );
     jPanel2Layout.setVerticalGroup(
       jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -261,10 +344,16 @@ public class MainScreen extends javax.swing.JFrame {
         .addComponent(labelCurState)
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
         .addComponent(labelQuote)
-        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 143, Short.MAX_VALUE)
-        .addComponent(btnClear)
         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-        .addComponent(btnBuilder)
+        .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 161, Short.MAX_VALUE)
+        .addGap(29, 29, 29)
+        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+          .addComponent(labelX)
+          .addComponent(btnClear))
+        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+          .addComponent(btnBuilder)
+          .addComponent(labelY))
         .addContainerGap())
     );
 
@@ -363,6 +452,7 @@ public class MainScreen extends javax.swing.JFrame {
     labelCurState.setText("0/0");
     states.clear();
     ip.clearProfiles();
+    updateLayersTable();
   }
   
   private void btnClearActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnClearActionPerformed
@@ -423,6 +513,16 @@ public class MainScreen extends javax.swing.JFrame {
     }
   }//GEN-LAST:event_btnBuilderActionPerformed
 
+  private void tableLayersPropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_tableLayersPropertyChange
+    if (ip != null) {
+      ip.repaint();
+    }
+  }//GEN-LAST:event_tableLayersPropertyChange
+
+  private void tableLayersVetoableChange(java.beans.PropertyChangeEvent evt)throws java.beans.PropertyVetoException {//GEN-FIRST:event_tableLayersVetoableChange
+    
+  }//GEN-LAST:event_tableLayersVetoableChange
+
   /**
    * @param args the command line arguments
    */
@@ -470,8 +570,12 @@ public class MainScreen extends javax.swing.JFrame {
   private javax.swing.JMenuItem jMenuItem2;
   private javax.swing.JPanel jPanel1;
   private javax.swing.JPanel jPanel2;
+  private javax.swing.JScrollPane jScrollPane2;
   private javax.swing.JSplitPane jSplitPane1;
   private javax.swing.JLabel labelCurState;
   private javax.swing.JLabel labelQuote;
+  private javax.swing.JLabel labelX;
+  private javax.swing.JLabel labelY;
+  private javax.swing.JTable tableLayers;
   // End of variables declaration//GEN-END:variables
 }

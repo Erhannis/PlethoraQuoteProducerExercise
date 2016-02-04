@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.util.Pair;
+import javax.swing.table.DefaultTableModel;
 
 /**
  * Copied some of the view transformation stuff from one of my other projects
@@ -30,11 +31,13 @@ public class ImagePanel extends javax.swing.JPanel {
     public AffineTransform ati;
 
     private ArrayList<Pair<Profile, Color>> profiles = new ArrayList<Pair<Profile, Color>>();
+    private DefaultTableModel layersModel;
     
     /**
      * Creates new form ImagePanel
      */
-    public ImagePanel() {
+    public ImagePanel(DefaultTableModel layersModel) {
+      this.layersModel = layersModel;
       try {
         ati = at.createInverse();
       } catch (NoninvertibleTransformException ex) {
@@ -72,7 +75,16 @@ public class ImagePanel extends javax.swing.JPanel {
       g2.transform(at);
       g2.setStroke(new BasicStroke(0));
 
-      for (Pair<Profile, Color> pair : profiles) {
+      boolean checkShowLayers = (profiles.size() == layersModel.getRowCount());
+      
+      for (int i = 0; i < profiles.size(); i++) {
+        Pair<Profile, Color> pair = profiles.get(i);
+        if (checkShowLayers) {
+          if (!((Boolean)layersModel.getValueAt(i, 0))) {
+            continue;
+          }
+        }
+        
         Profile profile = pair.getKey();
         Color color = pair.getValue();
         g2.setColor(color);

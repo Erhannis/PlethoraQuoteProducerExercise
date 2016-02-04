@@ -26,6 +26,8 @@ import java.util.logging.Logger;
  * Algorithms for finding convex hulls - wikipedia.  Modifying the gift-wrapping algorithm.
  * Looked up the rotation matrix formula on wikipedia.
  * Looked up how to format dollar amounts properly - http://stackoverflow.com/a/13791420/513038
+ * Looked up some of the Java API
+ * Looked up convenient ways of making a checkbox list element (stack overflow); ended up using a table
  * @author erhannis
  */
 public class PlethoraQuoteProducer {
