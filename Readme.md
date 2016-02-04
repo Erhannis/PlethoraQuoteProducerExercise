@@ -81,9 +81,9 @@ It works basically by generating a convex hull of the profile, and then tries bo
 As far as what I'd improve, I've already spent the time to do most of the things I could think of to do.  However, it does bug me that there are a few cases it won't handle quite right.  Other approaches I could try, possibly in conjunction with my current one, include using an optimization algorithm on the function from rotation to cost, and simply reduce it as much as possible like that.  It'd be susceptible to local minima, but in combination with the other algorithm, it might improve handling of the edge cases.
 
 Things I looked up:
-Parsing JSON in Java - used GSON
-Algorithms for finding convex hulls - wikipedia.  Modified the gift-wrapping algorithm.
-Looked up the rotation matrix formula on wikipedia.
-Looked up how to format dollar amounts properly - http://stackoverflow.com/a/13791420/513038
-Looked up some of the Java API
-Looked up convenient ways of making a checkbox list element; ended up using a table - http://stackoverflow.com/a/19796/513038
+* Parsing JSON in Java - used GSON
+* Algorithms for finding convex hulls - wikipedia.  Modified the gift-wrapping algorithm.
+* Looked up the rotation matrix formula on wikipedia.
+* Looked up how to format dollar amounts properly - http://stackoverflow.com/a/13791420/513038
+* Looked up some of the Java API
+* Looked up convenient ways of making a checkbox list element; ended up using a table - http://stackoverflow.com/a/19796/513038
