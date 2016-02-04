@@ -264,6 +264,7 @@ if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), candida
         
         ArrayList<Pair<Point2D, Arc>> candidates = getCandidateWrappingTargets(curArc.getValue(), spentTargets);
 if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), candidates, null, null, null); //DEBUGGING
+        Pair<Point2D, Arc> startArc = curArc;
         Pair<Point2D, Arc> bestCandidate = null;
         for (Pair<Point2D, Arc> nextCandidate : candidates) {
           // Don't land on the same point you're at, and don't land on the same arc you've done for the past two times.
@@ -282,11 +283,16 @@ if (ms != null) {ArrayList<Pair<Point2D, Arc>> nc = new ArrayList<Pair<Point2D, 
             continue;
           }
 
-          if (bestCandidate == null || new Line2D.Double(tempArc.getKey(), bestCandidate.getKey()).relativeCCW(nextCandidate.getKey()) == -1) {
+          if (bestCandidate == null || new Line2D.Double(curArc.getKey(), bestCandidate.getKey()).relativeCCW(nextCandidate.getKey()) == -1) {
             bestCandidate = nextCandidate;
             curArc = tempArc;
 if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), candidates, null, null, new Line2D.Double(curArc.getKey(), bestCandidate.getKey())); //DEBUGGING
           }
+        }
+        if (startArc.getKey().distance(startArc.getValue().endPoint) < PlethoraQuoteProducer.SNAP_THRESHOLD
+         && curArc.getKey().distance(curArc.getValue().startPoint) < PlethoraQuoteProducer.SNAP_THRESHOLD) {
+          // We've cut across a hole and are leaving from the other side; put down a line before we go
+          hull.lines.add(new Line2D.Double(startArc.getKey(), curArc.getKey()));
         }
         if ((curArc.getValue() == firstArc.getValue() && bestCandidate.getValue() != firstArc.getValue()) || (arcs.size() == 1 && lines.size() == 0)) {
           if (leftFirstEdgeOnce) {
@@ -330,7 +336,7 @@ if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), null, n
     for (Arc arc : arcs) {
       // Find the two points on the edges of the circle tangent to which you can draw lines through pt
       double angleDiff = Math.acos(arc.radius / arc.center.distance(pt));
-      double anglePtAbs = Math.atan2(pt.getY() - arc.center.getY(), pt.getX() - arc.center.getX());
+      double anglePtAbs = Utils.angleFromTo(arc.center, pt);
       double angle1 = Utils.wrapAngle(anglePtAbs + angleDiff);
       double angle2 = Utils.wrapAngle(anglePtAbs - angleDiff);
       if (arc.angleInArc(angle1)) {
@@ -388,7 +394,7 @@ if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), null, n
         {
           // Starting from startPoint
           double angleDiff = Math.acos(arc2.radius / arc2.center.distance(arc.startPoint));
-          double anglePtAbs = Math.atan2(arc2.center.getY() - arc.startPoint.getY(), arc2.center.getX() - arc.startPoint.getX());
+          double anglePtAbs = Utils.angleFromTo(arc2.center, arc.startPoint);
           double angle1 = Utils.wrapAngle(anglePtAbs + angleDiff);
           double angle2 = Utils.wrapAngle(anglePtAbs - angleDiff);
           if (arc2.angleInArc(angle1)) {
@@ -408,7 +414,7 @@ if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), null, n
         {
           // Starting from endPoint
           double angleDiff = Math.acos(arc2.radius / arc2.center.distance(arc.endPoint));
-          double anglePtAbs = Math.atan2(arc2.center.getY() - arc.endPoint.getY(), arc2.center.getX() - arc.endPoint.getX());
+          double anglePtAbs = Utils.angleFromTo(arc2.center, arc.endPoint);
           double angle1 = Utils.wrapAngle(anglePtAbs + angleDiff);
           double angle2 = Utils.wrapAngle(anglePtAbs - angleDiff);
           if (arc2.angleInArc(angle1)) {
@@ -434,7 +440,7 @@ if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), null, n
         } else {
           angleDiff = Math.PI / 2.0;
         }
-        double anglePtAbs = Math.atan2(arc2.center.getY() - arc.center.getY(), arc2.center.getX() - arc.center.getX());
+        double anglePtAbs = Utils.angleFromTo(arc2.center, arc.center);
         double angle1 = Utils.wrapAngle(anglePtAbs + angleDiff);
         double angle2 = Utils.wrapAngle(anglePtAbs - angleDiff);
         // I could probably check whether the corresponding point on arc is in angle, too, and it'd be more efficient, but this is still accurate.
@@ -482,9 +488,7 @@ if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), null, n
     ArrayList<Point2D> points = new ArrayList<Point2D>();
     // Find the points on the edges of the source arc tangent to which you can draw lines through the target
     double angleDiff = Math.acos(source.radius / source.center.distance(target.getKey()));
-    //TODO This line may have the terms backwards, and it sets things slightly awry.
-    //double anglePtAbs = Math.atan2(source.center.getY() - target.getKey().getY(), source.center.getX() - target.getKey().getX());
-    double anglePtAbs = Math.atan2(target.getKey().getY() - source.center.getY(), target.getKey().getX() - source.center.getX());
+    double anglePtAbs = Utils.angleFromTo(source.center, target.getKey());
     double angle1 = Utils.wrapAngle(anglePtAbs + angleDiff);
     double angle2 = Utils.wrapAngle(anglePtAbs - angleDiff);
     if (source.angleInArc(angle1)) {
@@ -502,14 +506,13 @@ if (ms != null) ms.constructAndAddHullState(this, hull, curArc.getKey(), null, n
   
   public Point2D getCandidateWrappingSource(Arc source, Pair<Point2D, Arc> target) {
     ArrayList<Point2D> points = getCandidateWrappingSources(source, target);
-    double anglePtAbs = Math.atan2(source.center.getY() - target.getKey().getY(), source.center.getX() - target.getKey().getX());
-    //double anglePtAbs = Math.atan2(target.getKey().getY() - source.center.getY(), target.getKey().getX() - source.center.getX());
     
     Point2D bestPoint = null;
     double bestAngle = Double.POSITIVE_INFINITY;
     // Looking at the line from target to source center, find which source point is most clockwise.
+    double anglePtAbs = Utils.angleFromTo(target.getKey(), source.center);
     for (Point2D pt : points) {
-      double angleAbs = Math.atan2(pt.getY() - target.getKey().getY(), pt.getX() - target.getKey().getX());
+      double angleAbs = Utils.angleFromTo(target.getKey(), pt);
       double angleRel = Utils.wrapAngle(angleAbs - anglePtAbs);
       //TODO I don't know what it'd mean if angleRel were less than -PI/2.  Makes me suspicious.
       if (bestPoint == null || angleRel < bestAngle) {

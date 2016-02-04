@@ -191,8 +191,8 @@ public class PlethoraQuoteProducer {
         Arc arc = new Arc();
         arc.center = new Point2D.Double(cx, cy);
         arc.radius = arc.center.distance(startVertex);
-        arc.startAngle = Math.atan2(startVertex.y - arc.center.y, startVertex.x - arc.center.x);
-        arc.endAngle = Math.atan2(endVertex.y - arc.center.y, endVertex.x - arc.center.x);
+        arc.startAngle = Utils.angleFromTo(arc.center, startVertex);
+        arc.endAngle = Utils.angleFromTo(arc.center, endVertex);
         arc.startPoint = startVertex;
         arc.endPoint = endVertex;
         
